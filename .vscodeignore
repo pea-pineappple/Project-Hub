@@ -1,0 +1,10 @@
+src/**
+scripts/**
+docs/**
+.claude/**
+.vscode/**
+media/gen-icon.js
+tsconfig.json
+.gitignore
+*.vsix
+out/**/*.map
