@@ -1,0 +1,5 @@
+# 저장은 항상 LF로 — 다른 PC에서 클론했을 때 줄바꿈 차이로
+# 모든 파일이 수정된 것처럼 보이는 일을 막는다.
+* text=auto eol=lf
+*.png binary
+*.vsix binary
