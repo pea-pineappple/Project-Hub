@@ -70,6 +70,7 @@
   "Select a {0} session to resume in {1} (each session opens in its own terminal)": "{1}에서 이어서 열 {0} 세션 선택 (각 세션은 별도 터미널로 열림)",
   "Select an agent to run in {0}": "{0}에서 실행할 에이전트 선택",
   "Select an identification color for {0}": "{0}의 식별 색상 선택",
+  "Select the address to open": "열 주소를 선택하세요",
   "Select the agent to send the instruction to": "지시를 보낼 에이전트 선택",
   "Session {0}\nClick: open this session's terminal": "세션 {0}\n클릭: 이 세션의 터미널 열기",
   "Set Up Notifications": "알림 설정",

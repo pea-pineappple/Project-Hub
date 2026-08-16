@@ -19,6 +19,7 @@
   "cmd.setProjectColor": "식별 색상 지정",
   "cmd.killProcess": "프로세스 종료",
   "cmd.toggleProcessFilter": "프로세스 전체/핵심 표시 전환",
+  "cmd.openInBrowser": "브라우저에서 열기",
   "cmd.killService": "서비스 종료",
   "cmd.killProjectServices": "프로젝트 서비스 모두 종료",
   "cmd.sendInstruction": "에이전트에 지시 보내기",

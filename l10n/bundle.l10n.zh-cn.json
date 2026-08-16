@@ -70,6 +70,7 @@
   "Select a {0} session to resume in {1} (each session opens in its own terminal)": "选择要在 {1} 中恢复的 {0} 会话(每个会话在单独的终端中打开)",
   "Select an agent to run in {0}": "选择要在 {0} 中运行的代理",
   "Select an identification color for {0}": "为 {0} 选择标识颜色",
+  "Select the address to open": "选择要打开的地址",
   "Select the agent to send the instruction to": "选择要发送指令的代理",
   "Session {0}\nClick: open this session's terminal": "会话 {0}\n点击:打开此会话的终端",
   "Set Up Notifications": "设置通知",

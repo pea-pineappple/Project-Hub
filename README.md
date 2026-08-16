@@ -103,6 +103,7 @@ Terminal processes die on a full restart, but conversation history is preserved 
 ## Services & processes
 
 - The **Services** section lists every process listening on a port that belongs to a registered project — grouped by project, with per-service and per-project stop buttons, plus a **Restart Service** action that remembers the command you used. Detection works even for servers started detached or from another window, matched by command line and process ancestry.
+- Web services get an **Open in Browser** button that opens `http://localhost:<port>`. Known non-HTTP ports and processes — PostgreSQL, MySQL, Redis, MongoDB, the Node inspector, and so on — don't get one. Ports 443 and 8443 open over https. If a service listens on several web ports you're asked which to open, and the tooltip lists them as clickable links.
 - Each project also has a **Background Processes** node showing everything under its agent terminals. MCP servers and internal helpers are hidden by default (the "N hidden" row toggles them).
 
 ## Browsing project files
@@ -294,6 +295,7 @@ code --install-extension claude-project-hub-0.11.0.vsix
 ## 서비스·프로세스
 
 - **서비스** 섹션은 등록된 프로젝트 소속으로 포트를 리슨 중인 프로세스를 프로젝트별로 묶어 보여주고, 개별·일괄 종료와 **서비스 재시작**(사용한 명령을 기억)을 제공합니다. 분리 실행했거나 다른 창에서 띄운 서버도 명령줄·조상 추적으로 잡습니다.
+- 웹 서비스에는 **브라우저에서 열기** 버튼이 붙어 `http://localhost:<포트>`를 엽니다. PostgreSQL·MySQL·Redis·MongoDB·Node 인스펙터처럼 웹이 아닌 포트·프로세스에는 붙지 않고, 443·8443은 https로 엽니다. 웹 포트를 여러 개 리슨 중이면 어느 것을 열지 고르게 하며, 툴팁에도 클릭 가능한 링크로 나열됩니다.
 - 프로젝트마다 **백그라운드 프로세스** 노드에서 에이전트 터미널 하위 프로세스를 확인할 수 있습니다. MCP·헬퍼는 기본 숨김이고 "N개 숨겨짐" 행으로 토글합니다.
 
 ## 프로젝트 파일 보기

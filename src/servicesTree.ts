@@ -3,7 +3,13 @@ import { Project } from './types';
 import { ProjectManager } from './projectManager';
 import { TerminalManager } from './terminalManager';
 import { AvatarStore } from './avatars';
-import { BgProcess, getBackgroundProcesses, getListeningServicesByProject } from './processTree';
+import {
+    BgProcess,
+    getBackgroundProcesses,
+    getListeningServicesByProject,
+    serviceUrl,
+    webPorts
+} from './processTree';
 import { normalizePath } from './paths';
 import { switchHint } from './projectTree';
 
@@ -66,11 +72,15 @@ export class ServicesTreeProvider implements vscode.TreeDataProvider<SvcNode> {
         item.id = `svc:${p.pid}`;
         item.description = `:${p.ports.join(' :')} · PID ${p.pid}`;
         item.iconPath = new vscode.ThemeIcon('radio-tower', new vscode.ThemeColor('charts.blue'));
-        item.contextValue = 'serviceRow';
+        // 웹으로 열 수 있는 서비스만 '브라우저에서 열기' 메뉴가 뜨도록 구분
+        const web = webPorts(p);
+        item.contextValue = web.length ? 'serviceRowWeb' : 'serviceRow';
         item.tooltip = new vscode.MarkdownString(
             `**${p.label}** — ${p.name} (PID ${p.pid})\n\n` +
             `${vscode.l10n.t('Project: {0}', node.project.name)}\n\n` +
             vscode.l10n.t('Listening ports: {0}', p.ports.join(', ')) +
+            // 툴팁에서 바로 눌러 열 수 있게 링크로 (MarkdownString의 일반 http 링크)
+            (web.length ? `\n\n${web.map(port => `[${serviceUrl(port)}](${serviceUrl(port)})`).join(' · ')}` : '') +
             (p.command ? `\n\n\`${p.command.slice(0, 400)}\`` : '') +
             (switchHint() ? `\n\n${switchHint().trim()}` : '')
         );

@@ -70,6 +70,7 @@
   "Select a {0} session to resume in {1} (each session opens in its own terminal)": "{1} で再開する {0} セッションを選択 (各セッションは別々のターミナルで開きます)",
   "Select an agent to run in {0}": "{0} で実行するエージェントを選択",
   "Select an identification color for {0}": "{0} の識別カラーを選択",
+  "Select the address to open": "開くアドレスを選択してください",
   "Select the agent to send the instruction to": "指示を送るエージェントを選択",
   "Session {0}\nClick: open this session's terminal": "セッション {0}\nクリック: このセッションのターミナルを開く",
   "Set Up Notifications": "通知を設定",

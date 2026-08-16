@@ -70,6 +70,7 @@
   "Select a {0} session to resume in {1} (each session opens in its own terminal)": "選擇要在 {1} 中恢復的 {0} 工作階段(每個工作階段在單獨的終端機中開啟)",
   "Select an agent to run in {0}": "選擇要在 {0} 中執行的代理",
   "Select an identification color for {0}": "為 {0} 選擇識別顏色",
+  "Select the address to open": "選擇要開啟的位址",
   "Select the agent to send the instruction to": "選擇要傳送指令的代理",
   "Session {0}\nClick: open this session's terminal": "工作階段 {0}\n按一下:開啟此工作階段的終端機",
   "Set Up Notifications": "設定通知",
