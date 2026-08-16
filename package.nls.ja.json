@@ -19,6 +19,7 @@
   "cmd.setProjectColor": "識別カラーを設定",
   "cmd.killProcess": "プロセスを終了",
   "cmd.toggleProcessFilter": "プロセスの全件/主要のみ表示を切り替え",
+  "cmd.openInBrowser": "ブラウザーで開く",
   "cmd.killService": "サービスを停止",
   "cmd.killProjectServices": "プロジェクトのサービスをすべて停止",
   "cmd.sendInstruction": "エージェントに指示を送る",

@@ -19,6 +19,7 @@
   "cmd.setProjectColor": "设置标识颜色",
   "cmd.killProcess": "终止进程",
   "cmd.toggleProcessFilter": "切换显示全部/核心进程",
+  "cmd.openInBrowser": "在浏览器中打开",
   "cmd.killService": "停止服务",
   "cmd.killProjectServices": "停止项目的所有服务",
   "cmd.sendInstruction": "向代理发送指令",

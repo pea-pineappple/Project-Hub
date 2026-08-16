@@ -23,7 +23,7 @@ import {
 import { listClaudeSessions, hasClaudeSession, claudeSessionPreview } from './claudeSessions';
 import { initSessionLabels, sessionLabel, setSessionLabel, sanitizeLabel } from './sessionLabels';
 import { getServiceCommand, setServiceCommand } from './serviceCommands';
-import { invalidateProcessCache, killProcessTree } from './processTree';
+import { invalidateProcessCache, killProcessTree, serviceUrl, webPorts } from './processTree';
 import { ServiceNode, ServiceProjectNode, ServicesTreeProvider } from './servicesTree';
 import { BriefingEntry, BriefingStore } from './briefing';
 import { BriefingViewProvider } from './briefingView';
@@ -1201,6 +1201,29 @@ export function activate(context: vscode.ExtensionContext): void {
                     vscode.l10n.t('Some services failed to stop — {0}', errors.join(' / '))
                 );
             }
+        }),
+
+        vscode.commands.registerCommand('projectHub.openServiceInBrowser', async (node?: ServiceNode) => {
+            if (!node || node.kind !== 'service') {
+                return;
+            }
+            const ports = webPorts(node.proc);
+            if (ports.length === 0) {
+                return;
+            }
+            let port = ports[0];
+            if (ports.length > 1) {
+                // 한 프로세스가 여러 포트를 리슨하면 어느 쪽을 열지 고르게 한다
+                const picked = await vscode.window.showQuickPick(
+                    ports.map(p => ({ label: `$(globe) ${serviceUrl(p)}`, port: p })),
+                    { placeHolder: vscode.l10n.t('Select the address to open') }
+                );
+                if (!picked) {
+                    return;
+                }
+                port = picked.port;
+            }
+            await vscode.env.openExternal(vscode.Uri.parse(serviceUrl(port)));
         }),
 
         vscode.commands.registerCommand('projectHub.killService', async (node?: ServiceNode) => {

@@ -19,6 +19,7 @@
   "cmd.setProjectColor": "Set Identification Color",
   "cmd.killProcess": "Kill Process",
   "cmd.toggleProcessFilter": "Toggle All/Essential Processes",
+  "cmd.openInBrowser": "Open in Browser",
   "cmd.killService": "Stop Service",
   "cmd.killProjectServices": "Stop All Project Services",
   "cmd.sendInstruction": "Send Instruction to Agent",

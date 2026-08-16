@@ -19,6 +19,7 @@
   "cmd.setProjectColor": "設定識別顏色",
   "cmd.killProcess": "終止處理程序",
   "cmd.toggleProcessFilter": "切換顯示全部/核心處理程序",
+  "cmd.openInBrowser": "在瀏覽器中開啟",
   "cmd.killService": "停止服務",
   "cmd.killProjectServices": "停止專案的所有服務",
   "cmd.sendInstruction": "向代理傳送指令",

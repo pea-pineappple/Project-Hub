@@ -267,6 +267,48 @@ export async function getListeningServicesByProject(
     return out;
 }
 
+/**
+ * 브라우저로 열어봐야 의미 없는 포트·프로세스.
+ * 허용 목록(allowlist)이 아니라 제외 목록으로 두는 이유: 개발 중 띄우는 서버는
+ * 대부분 웹이라, 새로운 프레임워크가 쓰는 포트를 일일이 등록하는 것보다
+ * 확실히 웹이 아닌 것만 걸러내는 쪽이 놓치는 게 적다.
+ */
+const NON_HTTP_PORTS = new Set([
+    1433, // SQL Server
+    1521, // Oracle
+    3306, // MySQL / MariaDB
+    5432, // PostgreSQL
+    6379, // Redis
+    5672, // RabbitMQ (AMQP — 관리 UI 15672는 웹이라 제외하지 않음)
+    9042, // Cassandra
+    9229, 9230, // Node 인스펙터 — dev 서버 옆에 같이 뜨는데 브라우저로 열 대상은 아니다
+    11211, // Memcached
+    27017, 27018, 27019 // MongoDB
+]);
+
+const NON_HTTP_PROCESSES = new Set([
+    'postgres.exe',
+    'mysqld.exe',
+    'mariadbd.exe',
+    'mongod.exe',
+    'redis-server.exe',
+    'sqlservr.exe',
+    'memcached.exe'
+]);
+
+/** 이 서비스에서 브라우저로 열어볼 만한 포트들 (없으면 웹 서비스가 아님) */
+export function webPorts(proc: BgProcess): number[] {
+    if (NON_HTTP_PROCESSES.has(proc.name.toLowerCase())) {
+        return [];
+    }
+    return proc.ports.filter(p => !NON_HTTP_PORTS.has(p));
+}
+
+/** 접속 URL. 개발 서버가 스스로 출력하는 표기와 맞춰 localhost를 쓴다 */
+export function serviceUrl(port: number): string {
+    return `${port === 443 || port === 8443 ? 'https' : 'http'}://localhost:${port}`;
+}
+
 /** 프로세스를 하위 트리까지 강제 종료 */
 export function killProcessTree(pid: number): Promise<string | undefined> {
     return new Promise(resolve => {
