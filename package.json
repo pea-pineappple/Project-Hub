@@ -513,6 +513,18 @@
               "command": "agy",
               "resumeCommand": "agy --continue",
               "resumeSessionCommand": "agy --conversation {sessionId}"
+            },
+            {
+              "id": "opencode",
+              "label": "OpenCode",
+              "command": "opencode",
+              "resumeCommand": "opencode --continue",
+              "resumeSessionCommand": "opencode --session {sessionId}"
+            },
+            {
+              "id": "terminal",
+              "label": "Terminal",
+              "command": ""
             }
           ]
         },
