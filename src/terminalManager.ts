@@ -8,7 +8,9 @@ const AGENT_ICONS: Record<string, string> = {
     claude: 'sparkle',
     gemini: 'flame',
     codex: 'circuit-board',
-    antigravity: 'rocket'
+    antigravity: 'rocket',
+    opencode: 'code',
+    terminal: 'terminal'
 };
 
 export class TerminalManager {
@@ -250,7 +252,10 @@ export class TerminalManager {
                 iconPath: new vscode.ThemeIcon(AGENT_ICONS[agent.id] ?? 'robot'),
                 location: this.location()
             });
-            terminal.sendText(resolveCommand(agent, resume, project.path), true);
+            const command = resolveCommand(agent, resume, project.path);
+            if (command) {
+                terminal.sendText(command, true);
+            }
             this.terminals.set(this.key(agent.id, project.path), terminal);
         }
         terminal.show(!focus);

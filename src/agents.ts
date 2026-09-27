@@ -4,6 +4,7 @@ import { hasClaudeSessions } from './claudeSessions';
 export interface AgentDef {
     id: string;
     label: string;
+    /** 빈 문자열이면 명령 없이 셸만 연다 (범용 터미널) */
     command: string;
     /** 마지막 세션을 이어서 여는 전체 명령. 비우면 resume 미지원 → command로 새 세션 */
     resumeCommand?: string;
@@ -35,13 +36,20 @@ const DEFAULT_BY_ID: Record<string, Partial<AgentDef>> = {
         label: 'Antigravity',
         resumeCommand: 'agy --continue',
         resumeSessionCommand: 'agy --conversation {sessionId}'
-    }
+    },
+    opencode: {
+        label: 'OpenCode',
+        resumeCommand: 'opencode --continue',
+        resumeSessionCommand: 'opencode --session {sessionId}'
+    },
+    // 범용 터미널: 에이전트 CLI 없이 프로젝트 cwd의 셸만 연다
+    terminal: { label: 'Terminal' }
 };
 
 export function getAgents(): AgentDef[] {
     const config = vscode.workspace.getConfiguration('projectHub');
     let agents = (config.get<AgentDef[]>('agents') ?? FALLBACK)
-        .filter(a => a && a.id && a.command)
+        .filter(a => a && a.id && typeof a.command === 'string')
         .map(a => ({ ...DEFAULT_BY_ID[a.id], ...a, label: a.label || DEFAULT_BY_ID[a.id]?.label || a.id }));
     if (agents.length === 0) {
         return FALLBACK;

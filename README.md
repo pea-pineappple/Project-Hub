@@ -88,6 +88,8 @@ Agents are defined in the `projectHub.agents` setting. Built-in defaults:
 | Gemini | `gemini` | `gemini --resume` | — |
 | Codex | `codex` | `codex resume --last` | — |
 | Antigravity | `agy` | `agy --continue` | `agy --conversation {sessionId}` |
+| OpenCode | `opencode` | `opencode --continue` | `opencode --session {sessionId}` |
+| Terminal | *(shell only)* | — | — |
 
 - Add any CLI by appending to the array — known ids auto-fill missing fields.
 - `projectHub.defaultAgent` controls auto-start on switch and the default terminal button.
@@ -282,8 +284,10 @@ code --install-extension claude-project-hub-0.11.0.vsix
 | Gemini | `gemini` | `gemini --resume` | — |
 | Codex | `codex` | `codex resume --last` | — |
 | Antigravity | `agy` | `agy --continue` | `agy --conversation {sessionId}` |
+| OpenCode | `opencode` | `opencode --continue` | `opencode --session {sessionId}` |
+| Terminal | *(셸만 열기)* | — | — |
 
-배열에 항목을 추가하면 어떤 CLI든 등록할 수 있고, 알려진 id는 빠진 필드가 자동으로 채워집니다. 네 에이전트 모두 알림을 지원하며, 직접 추가한 에이전트는 완료 시 `http://127.0.0.1:43917/hook/stop?agent=<id>`로 `{"cwd": "..."}`를 POST하도록 연결하면 됩니다.
+배열에 항목을 추가하면 어떤 CLI든 등록할 수 있고, 알려진 id는 빠진 필드가 자동으로 채워집니다. Claude·Gemini·Codex·Antigravity는 알림을 지원하며, 직접 추가한 에이전트는 완료 시 `http://127.0.0.1:43917/hook/stop?agent=<id>`로 `{"cwd": "..."}`를 POST하도록 연결하면 됩니다.
 
 ## 재시작 후 세션 복구
 
