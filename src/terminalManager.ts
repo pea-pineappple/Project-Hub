@@ -13,6 +13,38 @@ const AGENT_ICONS: Record<string, string> = {
     terminal: 'terminal'
 };
 
+/**
+ * 셸이 입력을 받을 준비가 된 뒤에 명령을 보낸다.
+ * 새로 만든 터미널에 곧바로 sendText하면 PowerShell(PSReadLine)이 뜨는 도중이라
+ * 첫 글자가 잘려 "laude --continue"처럼 실행되는 문제가 있다.
+ * shell integration이 활성화되면 그 시점에 보내고, 끝내 안 오면(cmd.exe 등) 일정 시간 뒤 보낸다.
+ */
+export function sendWhenReady(terminal: vscode.Terminal, text: string, timeoutMs = 4000): void {
+    if (terminal.shellIntegration) {
+        terminal.sendText(text, true);
+        return;
+    }
+    let done = false;
+    const send = () => {
+        if (done) {
+            return;
+        }
+        done = true;
+        listener.dispose();
+        clearTimeout(timer);
+        if (terminal.exitStatus === undefined) {
+            terminal.sendText(text, true);
+        }
+    };
+    const listener = vscode.window.onDidChangeTerminalShellIntegration(e => {
+        if (e.terminal === terminal) {
+            // 프롬프트가 완전히 그려질 여유를 조금 둔다
+            setTimeout(send, 200);
+        }
+    });
+    const timer = setTimeout(send, timeoutMs);
+}
+
 export class TerminalManager {
     /**
      * key: `${agentId}:${normalizedPath}` (기본 터미널)
@@ -178,6 +210,34 @@ export class TerminalManager {
         return this.terminalName(agentId, project, tag);
     }
 
+    /**
+     * 이름 규칙에 맞는 살아 있는 관리 터미널 전부 (기본 + 세션 터미널).
+     * VS Code를 완전히 재시작하면 셸만 복원되고 에이전트는 종료되므로 재실행 대상을 고를 때 쓴다.
+     * tag는 세션 터미널의 이름 태그(세션 이름 또는 ID 앞 8자리).
+     */
+    namedTerminals(projects: Project[]): Array<{ terminal: vscode.Terminal; project: Project; agent: AgentDef; tag?: string }> {
+        const out: Array<{ terminal: vscode.Terminal; project: Project; agent: AgentDef; tag?: string }> = [];
+        for (const project of projects) {
+            for (const agent of getAgents()) {
+                const base = this.terminalName(agent.id, project);
+                for (const t of vscode.window.terminals) {
+                    if (t.exitStatus !== undefined) {
+                        continue;
+                    }
+                    if (t.name === base) {
+                        this.terminals.set(this.key(agent.id, project.path), t);
+                        out.push({ terminal: t, project, agent });
+                    } else if (t.name.startsWith(`${base} · `)) {
+                        const tag = t.name.slice(base.length + 3);
+                        this.terminals.set(this.key(agent.id, project.path, tag), t);
+                        out.push({ terminal: t, project, agent, tag });
+                    }
+                }
+            }
+        }
+        return out;
+    }
+
     /** 프로젝트의 살아 있는 관리 터미널들의 셸 PID (백그라운드 프로세스 트리의 루트) */
     async getManagedPids(project: Project): Promise<number[]> {
         // 창 리로드 후 복원 터미널을 이름 규칙으로 먼저 재인식
@@ -236,11 +296,30 @@ export class TerminalManager {
      * resume=true면 에이전트의 resumeCommand로 마지막 세션을 이어서 연다.
      * (이미 실행 중인 터미널이 있으면 세션이 살아 있는 것이므로 그대로 표시만 한다.)
      */
-    /** 설정에 따라 새 터미널을 패널 대신 에디터 탭으로 연다 */
-    private location(): vscode.TerminalLocation | undefined {
-        return vscode.workspace.getConfiguration('projectHub').get<boolean>('terminalsInEditor', false)
-            ? vscode.TerminalLocation.Editor
-            : undefined;
+    /**
+     * 새 터미널 위치. 설정에 따라 패널 대신 에디터 탭으로 열고,
+     * 같은 프로젝트의 관리 터미널이 이미 살아 있으면 그 옆에 분할해서 연다
+     * (탭 목록을 눌러 오가지 않고 여러 에이전트를 한 화면에서 보도록).
+     */
+    private location(project: Project): vscode.TerminalOptions['location'] {
+        const config = vscode.workspace.getConfiguration('projectHub');
+        // 프로젝트 그리드 모드에서는 확장이 곧바로 에디터 그리드로 옮기므로 패널에 단독으로 연다
+        if (config.get<boolean>('projectTerminalGrid', true)) {
+            return undefined;
+        }
+        if (config.get<boolean>('splitAgentTerminals', true)) {
+            // 창 재시작 직후엔 맵이 비어 있으므로 복원된 터미널을 이름 규칙으로 먼저 재인식
+            for (const a of getAgents()) {
+                this.findManaged(project, a.id);
+            }
+            const suffix = `:${normalizePath(project.path)}`;
+            for (const [key, t] of this.terminals) {
+                if (key.endsWith(suffix) && t.exitStatus === undefined) {
+                    return { parentTerminal: t };
+                }
+            }
+        }
+        return config.get<boolean>('terminalsInEditor', false) ? vscode.TerminalLocation.Editor : undefined;
     }
 
     open(project: Project, agent: AgentDef, resume = false, focus = true): void {
@@ -250,11 +329,11 @@ export class TerminalManager {
                 name: this.terminalName(agent.id, project),
                 cwd: project.path,
                 iconPath: new vscode.ThemeIcon(AGENT_ICONS[agent.id] ?? 'robot'),
-                location: this.location()
+                location: this.location(project)
             });
             const command = resolveCommand(agent, resume, project.path);
             if (command) {
-                terminal.sendText(command, true);
+                sendWhenReady(terminal, command);
             }
             this.terminals.set(this.key(agent.id, project.path), terminal);
         }
@@ -277,9 +356,9 @@ export class TerminalManager {
                 name: this.terminalName(agent.id, project, sessionId),
                 cwd: project.path,
                 iconPath: new vscode.ThemeIcon(AGENT_ICONS[agent.id] ?? 'robot'),
-                location: this.location()
+                location: this.location(project)
             });
-            terminal.sendText(command, true);
+            sendWhenReady(terminal, command);
             this.terminals.set(this.key(agent.id, project.path, sessionId), terminal);
         }
         terminal.show(!focus);

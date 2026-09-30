@@ -27,6 +27,8 @@ interface RawProc {
     Name: string | null;
     CommandLine: string | null;
     ExecutablePath: string | null;
+    /** PowerShell 5.1 JSON 형식 "/Date(ms)/" */
+    CreationDate?: string | null;
 }
 
 /**
@@ -35,7 +37,7 @@ interface RawProc {
  * 새로 고칠 때만 실제 조회가 일어난다.
  */
 const PS_SCRIPT =
-    '$p = Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine,ExecutablePath; ' +
+    '$p = Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine,ExecutablePath,CreationDate; ' +
     '$t = @(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Select-Object OwningProcess,LocalPort); ' +
     '@{procs=@($p); ports=@($t)} | ConvertTo-Json -Compress -Depth 4';
 
@@ -190,6 +192,29 @@ export async function getBackgroundProcesses(rootPids: number[], showAll = false
     }
     const shown = showAll ? all : all.filter(p => p.ports.length > 0 || p.depth === 1);
     return { shown, hiddenCount: all.length - shown.length };
+}
+
+/**
+ * 셸 아래에서 무언가(에이전트 등) 실행 중인지. conhost 같은 콘솔 호스트는 제외.
+ * 프로세스 조회에 실패하면 undefined — 호출 측은 "모름"으로 취급해야 한다
+ * (실행 중인 에이전트 입력창에 명령을 잘못 보내지 않도록).
+ */
+export async function hasRunningChild(shellPid: number): Promise<boolean | undefined> {
+    const snap = await snapshot();
+    if (snap.procs.length === 0) {
+        return undefined;
+    }
+    return snap.procs.some(
+        p => p.ParentProcessId === shellPid && (p.Name ?? '').toLowerCase() !== 'conhost.exe'
+    );
+}
+
+/** 프로세스 시작 시각(ms). 조회 실패 시 undefined */
+export async function processStartTime(pid: number): Promise<number | undefined> {
+    const snap = await snapshot();
+    const raw = snap.procs.find(p => p.ProcessId === pid)?.CreationDate;
+    const m = raw ? /Date\((\d+)\)/.exec(raw) : null;
+    return m ? Number(m[1]) : undefined;
 }
 
 /**
