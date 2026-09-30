@@ -2,7 +2,7 @@
   "name": "claude-project-hub",
   "displayName": "Project Hub for Claude Code",
   "description": "%ext.description%",
-  "version": "0.14.0",
+  "version": "0.15.6",
   "l10n": "./l10n",
   "publisher": "PecuniaEstAI",
   "private": true,
@@ -562,6 +562,21 @@
           "type": "boolean",
           "default": false,
           "description": "%cfg.terminalsInEditor%"
+        },
+        "projectHub.splitAgentTerminals": {
+          "type": "boolean",
+          "default": true,
+          "description": "%cfg.splitAgentTerminals%"
+        },
+        "projectHub.projectTerminalGrid": {
+          "type": "boolean",
+          "default": true,
+          "description": "%cfg.projectTerminalGrid%"
+        },
+        "projectHub.resumeAgentsOnRestart": {
+          "type": "boolean",
+          "default": true,
+          "description": "%cfg.resumeAgentsOnRestart%"
         },
         "projectHub.fileTreeExclude": {
           "type": "array",

@@ -8,7 +8,7 @@ import { samePath } from './paths';
 import { AvatarStore, PALETTE, colorOf, contrastText } from './avatars';
 import { asProject, HubNode, ProjectDragAndDrop } from './projectTree';
 import { ProjectTreeProvider } from './projectTree';
-import { TerminalManager } from './terminalManager';
+import { TerminalManager, sendWhenReady } from './terminalManager';
 import { NotificationServer, HookEvent, HookPayload } from './notificationServer';
 import { installAgentHooks, hasAgentHooks, supportsHooks } from './hookInstaller';
 import {
@@ -18,12 +18,14 @@ import {
     getAgentLabel,
     getDefaultAgent,
     canVerifySessions,
-    canPickSessions
+    canPickSessions,
+    resolveCommand,
+    resolveSessionCommand
 } from './agents';
 import { listClaudeSessions, hasClaudeSession, claudeSessionPreview } from './claudeSessions';
-import { initSessionLabels, sessionLabel, setSessionLabel, sanitizeLabel } from './sessionLabels';
+import { initSessionLabels, sessionLabel, sessionTag, setSessionLabel, sanitizeLabel } from './sessionLabels';
 import { getServiceCommand, setServiceCommand } from './serviceCommands';
-import { invalidateProcessCache, killProcessTree, serviceUrl, webPorts } from './processTree';
+import { hasRunningChild, invalidateProcessCache, processStartTime, killProcessTree, serviceUrl, webPorts } from './processTree';
 import { ServiceNode, ServiceProjectNode, ServicesTreeProvider } from './servicesTree';
 import { BriefingEntry, BriefingStore } from './briefing';
 import { BriefingViewProvider } from './briefingView';
@@ -240,6 +242,19 @@ export function activate(context: vscode.ExtensionContext): void {
     function openAgent(project: Project, agent: AgentDef, resume: boolean, focus: boolean): void {
         ensureHooks(agent.id);
         terminals.open(project, agent, resume, focus);
+        afterTerminalOpened(project);
+    }
+
+    function openAgentSession(project: Project, agent: AgentDef, sessionId: string): void {
+        openAgentSession(project, agent, sessionId);
+        afterTerminalOpened(project);
+    }
+
+    /** 프로젝트 그리드 모드면 새로 연 터미널까지 포함해 활성 프로젝트 그리드를 다시 짠다 */
+    function afterTerminalOpened(project: Project): void {
+        if (projectGridMode() && manager.isActive(project)) {
+            void regridProject(project);
+        }
     }
 
     // ── 전환 로직 ───────────────────────────────────────────────
@@ -250,9 +265,18 @@ export function activate(context: vscode.ExtensionContext): void {
     let activeGrid: { projectPath: string; terminals: vscode.Terminal[] } | undefined;
     const gridPause = () => new Promise(resolve => setTimeout(resolve, 150));
 
-    async function arrangeGrid(terms: vscode.Terminal[]): Promise<void> {
-        // 에디터 영역을 2열 그리드로 만들고 터미널을 하나씩 옮긴다 (최대 6칸, 넘치면 마지막 칸에 탭으로)
-        const k = Math.min(terms.length, 6);
+    /**
+     * cells[i]의 터미널들을 그리드 i번째 칸에 탭으로 넣는다.
+     * 터미널마다 한 칸이면 [[a], [b]], 프로젝트마다 한 칸(전체 보기)이면 [[a1, a2], [b1]].
+     */
+    async function arrangeGrid(cells: vscode.Terminal[][]): Promise<void> {
+        // 에디터 영역을 2열 그리드로 만들고 칸마다 터미널을 옮긴다 (최대 6칸, 넘치면 마지막 칸에 탭으로)
+        // 먼저 기존 에디터 그룹(비어 있는 칸 포함)을 하나로 합쳐 두어야 남는 칸이 터미널을 밀어내지 않는다.
+        // 열려 있던 파일은 첫 칸의 뒤쪽 탭으로 남는다.
+        await unlockAndCloseEmptyGroups();
+        await vscode.commands.executeCommand('workbench.action.joinAllGroups');
+        cells = cells.filter(c => c.length > 0);
+        const k = Math.min(cells.length, 6);
         const leftRows = Math.ceil(k / 2);
         const rightRows = k - leftRows;
         const col = (rows: number) => (rows > 1 ? { groups: Array.from({ length: rows }, () => ({})) } : {});
@@ -268,14 +292,109 @@ export function activate(context: vscode.ExtensionContext): void {
             'workbench.action.focusFifthEditorGroup',
             'workbench.action.focusSixthEditorGroup'
         ];
-        for (let i = 0; i < terms.length; i++) {
-            await vscode.commands.executeCommand(focusCmds[Math.min(i, k - 1)]);
-            terms[i].show(false);
-            await gridPause();
-            await vscode.commands.executeCommand('workbench.action.terminal.moveToEditor');
-            await gridPause();
+        for (let i = 0; i < cells.length; i++) {
+            for (const term of cells[i]) {
+                await vscode.commands.executeCommand(focusCmds[Math.min(i, k - 1)]);
+                term.show(false);
+                await gridPause();
+                await vscode.commands.executeCommand('workbench.action.terminal.moveToEditor');
+                await gridPause();
+            }
         }
         await vscode.commands.executeCommand('workbench.action.closePanel');
+    }
+
+    /**
+     * 프로젝트 그리드 모드: 에디터 영역에는 활성 프로젝트의 터미널만 그리드로 띄우고
+     * 다른 프로젝트 터미널은 (닫힌) 하단 패널로 보낸다. VS Code는 터미널 탭 목록을
+     * 거르는 API가 없어서, "현재 프로젝트 터미널만 보이게" 하는 유일한 방법이다.
+     */
+    function projectGridMode(): boolean {
+        return config().get<boolean>('projectTerminalGrid', true);
+    }
+
+    let regridding: Promise<void> = Promise.resolve();
+    function regridProject(project: Project): Promise<void> {
+        // 전환·열기가 연달아 오면 배치 명령이 뒤섞이므로 순서대로 실행
+        regridding = regridding.then(async () => {
+            if (!manager.isActive(project)) {
+                return;
+            }
+            const incoming = terminals.allLiveTerminals([project]);
+            // 에디터의 터미널을 모두 패널로 모은 뒤 다시 배치 (이미 에디터에 있는 터미널은
+            // show() 시 제자리에서 열려 칸 순서가 어긋나므로)
+            await moveAllEditorTerminalsToPanel();
+            if (incoming.length === 0) {
+                await unlockAndCloseEmptyGroups();
+                await vscode.commands.executeCommand('workbench.action.closePanel');
+                activeGrid = undefined;
+                return;
+            }
+            await arrangeGrid(incoming.map(t => [t]));
+            activeGrid = { projectPath: project.path, terminals: incoming };
+        }).catch(() => {
+            /* 배치 실패는 무시 — 터미널은 그대로 살아 있다 */
+        });
+        return regridding;
+    }
+
+    const FOCUS_GROUP = [
+        'workbench.action.focusFirstEditorGroup',
+        'workbench.action.focusSecondEditorGroup',
+        'workbench.action.focusThirdEditorGroup',
+        'workbench.action.focusFourthEditorGroup',
+        'workbench.action.focusFifthEditorGroup',
+        'workbench.action.focusSixthEditorGroup',
+        'workbench.action.focusSeventhEditorGroup',
+        'workbench.action.focusEighthEditorGroup'
+    ];
+
+    /**
+     * 에디터 그룹 잠금을 풀고 빈 그룹을 닫는다.
+     * VS Code는 터미널만 든 그룹을 자동으로 잠그는데(workbench.editor.autoLockGroups),
+     * 터미널을 패널로 되돌린 뒤에도 잠긴 빈 그룹은 닫히지도 합쳐지지도 않고
+     * 빈 칸(가운데 VS Code 로고 + 잠금 해제 아이콘)으로 남아 새 그리드를 밀어낸다.
+     */
+    async function unlockAndCloseEmptyGroups(): Promise<void> {
+        // 뒤 칸부터 닫아야 앞 칸들의 번호가 바뀌지 않는다
+        const groups = [...vscode.window.tabGroups.all].sort((a, b) => b.viewColumn - a.viewColumn);
+        for (const g of groups) {
+            if (g.viewColumn > FOCUS_GROUP.length) {
+                continue;
+            }
+            await vscode.commands.executeCommand(FOCUS_GROUP[g.viewColumn - 1]);
+            await vscode.commands.executeCommand('workbench.action.unlockEditorGroup');
+            if (g.tabs.length === 0 && vscode.window.tabGroups.all.length > 1) {
+                await vscode.commands.executeCommand('workbench.action.closeGroup');
+            }
+        }
+    }
+
+    /**
+     * 에디터 영역의 터미널 탭을 모두 패널로 되돌린다 (프로젝트 그리드 모드 전용).
+     * 탭 라벨은 에이전트가 바꾼 제목(예: "✳ Claude Code")이라 터미널 이름으로 찾을 수 없으므로,
+     * 그룹을 포커스하고 탭 위치로 활성화한 뒤 옮긴다.
+     */
+    async function moveAllEditorTerminalsToPanel(): Promise<void> {
+        // 옮길 때마다 탭 구성이 바뀌므로 매번 다시 조회 (무한 반복 방지 상한)
+        for (let guard = 0; guard < 30; guard++) {
+            let target: { column: number; index: number } | undefined;
+            for (const g of vscode.window.tabGroups.all) {
+                const index = g.tabs.findIndex(t => t.input instanceof vscode.TabInputTerminal);
+                if (index >= 0 && g.viewColumn <= FOCUS_GROUP.length) {
+                    target = { column: g.viewColumn, index };
+                    break;
+                }
+            }
+            if (!target) {
+                return;
+            }
+            await vscode.commands.executeCommand(FOCUS_GROUP[target.column - 1]);
+            await vscode.commands.executeCommand('workbench.action.openEditorAtIndex', target.index);
+            await gridPause();
+            await vscode.commands.executeCommand('workbench.action.terminal.moveToTerminalPanel');
+            await gridPause();
+        }
     }
 
     /** 에디터 탭으로 떠 있는 터미널들을 패널로 되돌린다 (세션 유지) */
@@ -327,12 +446,15 @@ export function activate(context: vscode.ExtensionContext): void {
             await editors.closeTabs(outgoingPath);
             await editors.restore(project.path);
         }
-        // 활성 프로젝트 전용 그리드였다면 새 프로젝트로 그리드를 넘긴다
-        if (activeGrid && outgoingPath && !isSameTarget && samePath(activeGrid.projectPath, outgoingPath)) {
+        if (projectGridMode()) {
+            if (!isSameTarget) {
+                await regridProject(project);
+            }
+        } else if (activeGrid && outgoingPath && !isSameTarget && samePath(activeGrid.projectPath, outgoingPath)) {
             await moveTerminalsToPanel(activeGrid.terminals);
             const incoming = terminals.allLiveTerminals([project]);
             if (incoming.length >= 2) {
-                await arrangeGrid(incoming);
+                await arrangeGrid(incoming.map(t => [t]));
                 activeGrid = { projectPath: project.path, terminals: incoming };
             } else {
                 await vscode.commands.executeCommand('workbench.action.closePanel');
@@ -929,7 +1051,7 @@ export function activate(context: vscode.ExtensionContext): void {
                     setSessionLabel(picked.id, sanitizeLabel(picked.preview));
                 }
                 ensureHooks(agent.id);
-                terminals.openSession(target, agent, picked.id, true);
+                openAgentSession(target, agent, picked.id);
             }
         }),
 
@@ -1076,7 +1198,22 @@ export function activate(context: vscode.ExtensionContext): void {
                 terms[0].show();
                 return;
             }
-            await arrangeGrid(terms);
+            if (projectGridMode()) {
+                // 이전 그리드의 터미널이 에디터에 남아 칸을 차지하지 않도록 먼저 모두 패널로
+                await moveAllEditorTerminalsToPanel();
+            }
+            // 전체 보기: 프로젝트마다 한 칸, 프로젝트 안의 여러 터미널은 그 칸에 탭으로
+            // (터미널이 한 프로젝트에만 있으면 기존처럼 터미널마다 한 칸)
+            const seen = new Set<vscode.Terminal>();
+            const cells = manager
+                .getProjects()
+                .map(p => terminals.allLiveTerminals([p]).filter(t => !seen.has(t) && (seen.add(t), true)))
+                .filter(c => c.length > 0);
+            if (terms === all && cells.length > 1) {
+                await arrangeGrid(cells);
+            } else {
+                await arrangeGrid(terms.map(t => [t]));
+            }
             // 활성 프로젝트 터미널만으로 구성된 그리드면 전환 시 따라가도록 기억
             const isActiveOnly =
                 !!activeProject && activeTerms.length > 0 && terms.every(t => activeTerms.includes(t));
@@ -1288,7 +1425,7 @@ export function activate(context: vscode.ExtensionContext): void {
                     cwd: project.path,
                     iconPath: new vscode.ThemeIcon('radio-tower')
                 });
-            term.sendText(command, true);
+            sendWhenReady(term, command);
             term.show(false);
             manager.refresh();
         }),
@@ -1341,6 +1478,56 @@ export function activate(context: vscode.ExtensionContext): void {
         }
         return vscode.l10n.t('{0}d ago', Math.round(hours / 24));
     }
+
+    // ── VS Code 완전 재시작 후 에이전트 재실행 ─────────────────────
+    // 창 리로드와 달리 앱을 완전히 껐다 켜면 VS Code는 터미널 셸과 화면 내용만 복원하고
+    // 그 안에서 돌던 에이전트는 종료된다. 이름 규칙으로 알아본 관리 터미널 중 셸 아래에
+    // 실행 중인 프로세스가 없는 것만 골라 마지막(또는 해당) 세션을 이어서 실행한다.
+    async function reviveRestoredAgents(): Promise<void> {
+        if (!config().get<boolean>('resumeAgentsOnRestart', true)) {
+            return;
+        }
+        const restored = terminals.namedTerminals(manager.getProjects()).filter(r => r.agent.command);
+        if (restored.length === 0) {
+            return;
+        }
+        invalidateProcessCache();
+        // 창 리로드에서는 셸이 그대로 살아 있다(시작 시각이 확장 호스트보다 한참 이전).
+        // 셸이 확장 호스트와 비슷한 시점에 새로 떴을 때만 완전 재시작으로 보고 재실행한다
+        // — 사용자가 일부러 에이전트를 끄고 셸만 남겨 둔 터미널을 리로드 때 되살리지 않도록.
+        const hostStart = Date.now() - process.uptime() * 1000;
+        for (const r of restored) {
+            const pid = await r.terminal.processId;
+            if (!pid) {
+                continue;
+            }
+            const started = await processStartTime(pid);
+            if (started === undefined || started < hostStart - 60_000) {
+                continue;
+            }
+            // 조회 실패(undefined)면 실행 중일 수도 있으므로 건드리지 않는다
+            if ((await hasRunningChild(pid)) !== false) {
+                continue;
+            }
+            let command: string | undefined;
+            if (r.tag && canPickSessions(r.agent)) {
+                const session = listClaudeSessions(r.project.path, 100).find(x => sessionTag(x.id) === r.tag);
+                command = session ? resolveSessionCommand(r.agent, session.id) : undefined;
+            }
+            command ??= resolveCommand(r.agent, true, r.project.path);
+            ensureHooks(r.agent.id);
+            sendWhenReady(r.terminal, command);
+        }
+    }
+    // 복원된 셸이 프롬프트를 띄울 시간을 준 뒤 확인하고, 그리드 모드면 활성 프로젝트 그리드 구성
+    setTimeout(async () => {
+        await reviveRestoredAgents();
+        const activePath = manager.getActivePath();
+        const active = activePath ? manager.findByPath(activePath) : undefined;
+        if (active && projectGridMode()) {
+            await regridProject(active);
+        }
+    }, 3000);
 
     function offerHookSetup(project: Project): void {
         if (hasAgentHooks(getDefaultAgent().id)) {

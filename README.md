@@ -33,7 +33,7 @@ Project Hub keeps **one** window. Projects swap inside a hub workspace, so the E
 
 **Send instructions without switching** — right-click a project, type, and it goes straight to that project's agent terminal.
 
-**Terminal grid** — arrange live agent terminals in a 2-column editor grid with one click. An active-project grid follows you across project switches.
+**Project terminal grid** — on each switch, only the active project's agent terminals are shown, in a 2-column editor grid. Other projects' terminals wait in the closed panel, still running. A one-click *all projects* view puts each project in its own cell with its terminals as tabs.
 
 **Usage & cost** — per-project Claude token usage and estimated cost, aggregated from saved sessions.
 
@@ -101,6 +101,7 @@ Terminal processes die on a full restart, but conversation history is preserved 
 
 - **⏱ Resume** restores the last conversation (`claude --continue`).
 - Right-click → **Open a Claude Session** lists saved sessions with previews. Each opens in its own terminal (`claude --resume <id>`), so several sessions can run in parallel.
+- **Automatic re-run**: VS Code restores agent terminals as plain shells. A few seconds after startup, Project Hub re-runs the agent in each of them — the last session for a default terminal, that session for a Claude session terminal. Only shells started fresh by this launch are touched; after a window reload, or in a terminal where you quit the agent yourself, nothing is sent. Turn off with `projectHub.resumeAgentsOnRestart`.
 
 ## Services & processes
 
@@ -121,8 +122,12 @@ Each project row has a **Files** node — a file tree of that project, right in 
 
 ## Terminal layout
 
-- **Grid**: the ⫽ button arranges live agent terminals in a 2-column editor grid (choose *active project only* or *all projects*). An active-project grid follows you when you switch: outgoing terminals return to the panel with sessions intact, incoming terminals form a new grid.
-- `projectHub.terminalsInEditor` opens agent terminals as editor tabs from the start.
+VS Code offers no way to filter the terminal tab list by project, so Project Hub shows only the active project's terminals by moving them into the editor area.
+
+- **Project grid** (`projectHub.projectTerminalGrid`, on by default): on every switch, the active project's agent terminals fill the editor area in a 2-column grid (one terminal per cell, up to 6). Other projects' terminals go back to the closed panel with sessions intact. Opening another agent for the active project rebuilds the grid. Open files stay as background tabs in the first cell.
+- **⫽ button**: arrange on demand. *All projects* gives each project one cell with its terminals as tabs; *active project only* gives each terminal its own cell. With the project grid on, the next switch or new agent returns to the active-project grid.
+- With the project grid off: `projectHub.splitAgentTerminals` opens a project's next agent split beside its existing terminal, and `projectHub.terminalsInEditor` opens agent terminals as editor tabs.
+- VS Code auto-locks editor groups that contain only a terminal (`workbench.editor.autoLockGroups`), so files you open go to another group. Project Hub unlocks and closes empty groups before each rearrangement.
 - Right-click any terminal → **Attach This Terminal to a Project** to adopt a terminal you opened yourself.
 
 ## Briefing & usage
@@ -152,14 +157,17 @@ Right-click a project row for per-project actions: resume, pick a session, open 
 | Setting | Default | Description |
 |---|---|---|
 | `projectHub.port` | `43917` | Local HTTP port for notifications (reinstall hooks after changing) |
-| `projectHub.agents` | Claude/Gemini/Codex/Antigravity | Agent list (id, label, command, resumeCommand, resumeSessionCommand) |
+| `projectHub.agents` | Claude/Gemini/Codex/Antigravity/OpenCode/Terminal | Agent list (id, label, command, resumeCommand, resumeSessionCommand) |
 | `projectHub.defaultAgent` | `claude` | Agent used for auto-start and the default terminal button |
 | `projectHub.focusClaudeTerminalOnSwitch` | `true` | Reveal the project's terminal on switch |
 | `projectHub.switchOnRowClick` | `true` | Clicking an agent, usage, or service row switches to that project first |
 | `projectHub.autoStartClaudeOnSwitch` | `true` | Auto-start the default agent if the project has no terminal |
 | `projectHub.autoInstallHooks` | `true` | Install notification hooks automatically |
 | `projectHub.restoreEditorsOnSwitch` | `true` | Save and restore editor tabs per project |
-| `projectHub.terminalsInEditor` | `false` | Open agent terminals as editor tabs |
+| `projectHub.projectTerminalGrid` | `true` | Show only the active project's agent terminals, in an editor grid |
+| `projectHub.resumeAgentsOnRestart` | `true` | Re-run agents in terminals restored after a full VS Code restart |
+| `projectHub.splitAgentTerminals` | `true` | Open a project's next agent split beside its existing terminal (project grid off only) |
+| `projectHub.terminalsInEditor` | `false` | Open agent terminals as editor tabs (project grid off only) |
 | `projectHub.fileTreeExclude` | `.git`, `node_modules`, `.venv`, `__pycache__`, `dist`, `out`, `.next` | Names hidden in the Files tree (exact name, not a glob) |
 | `projectHub.showAllProcesses` | `false` | Show MCP servers and helpers in the process list |
 | `projectHub.windowColor` | `false` | Tint the title bar with the project colour |
@@ -190,6 +198,18 @@ Service detection is Windows-only. On Windows, servers are matched by command li
 
 **I clicked a row under a project, but the Explorer still shows the previous project.**
 Clicking an agent, usage, or service row switches to that project by default. If it doesn't, `projectHub.switchOnRowClick` is off — that setting exists so you can look at another project's terminal without moving the Explorer. The project row itself always switches.
+
+**An agent exits by itself in a Python project; the terminal shows `Activate.ps1` / `deactivate` lines.**
+The Python Environments extension activates virtual environments by typing commands into terminals. When a project switch changes the workspace folders, it re-types `deactivate` and the activate command into terminals where an agent is already running, and the agent exits. Stop it from typing into terminals in your user settings:
+
+```json
+"python-envs.terminal.autoActivationType": "off"
+```
+
+`shellStartup` also avoids typed commands, but edits your PowerShell profile. Agents normally find the project's `.venv` on their own.
+
+**The first character of the agent command is missing (`laude --continue`).**
+Fixed in 0.15.4: commands are sent once the shell reports it is ready (shell integration), or after 4 seconds for shells without it.
 
 **The hook seems to block my agent.**
 It cannot. Hooks use `curl` with a 3-second timeout and fail silently when the server is down.
@@ -231,7 +251,7 @@ Project Hub는 창을 **하나만** 씁니다. 허브 워크스페이스 안에�
 - **무엇이 돌고 있는지** — 시킨 프롬프트가 함께 보이는 에이전트 상태 행(`Claude 작업 중… 로그인 버그 수정`), 에이전트가 띄운 dev 서버를 모아 보여주는 **서비스** 섹션(원클릭 종료·재시작), 프로젝트별 백그라운드 프로세스 트리.
 - **브리핑** — 자리 비운 사이 끝난 작업을 카드 피드로. 에이전트의 마지막 응답이 요약으로 들어가며 최근 200개가 보존됩니다.
 - **전환 없이 지시 보내기** — 프로젝트를 우클릭하고 입력하면 그 프로젝트의 에이전트 터미널로 바로 전달됩니다.
-- **터미널 그리드** — 살아 있는 에이전트 터미널을 에디터 2열 그리드로 배치. 활성 프로젝트 그리드는 전환을 따라옵니다.
+- **프로젝트 터미널 그리드** — 전환할 때마다 활성 프로젝트의 에이전트 터미널만 에디터 2열 그리드로 보여 줍니다. 다른 프로젝트 터미널은 닫힌 패널에서 계속 실행됩니다. *전체 프로젝트* 보기는 프로젝트마다 한 칸, 그 안의 터미널은 탭으로 합쳐 보여 줍니다.
 - **사용량·비용** — 저장된 세션을 집계한 프로젝트별 Claude 토큰 사용량과 예상 비용.
 - **에디터 탭 복원** — 프로젝트마다 열어둔 탭을 기억했다가 전환 시 되살립니다.
 
@@ -295,6 +315,7 @@ code --install-extension claude-project-hub-0.11.0.vsix
 
 - **⏱ 이어서 열기**로 마지막 대화를 복원합니다(`claude --continue`).
 - 우클릭 → **Claude 세션 골라서 열기**로 저장된 세션을 미리보기와 함께 고르면, 각각 별도 터미널에서 병행 복원됩니다.
+- **자동 재실행**: VS Code는 에이전트 터미널을 셸만 남은 채 복원합니다. 시작 몇 초 뒤 Project Hub가 각 터미널에서 에이전트를 다시 실행합니다 — 기본 터미널은 마지막 세션, Claude 세션 터미널은 그 세션. 이번 실행에서 새로 뜬 셸만 대상이며, 창 리로드 후나 직접 에이전트를 종료해 둔 터미널에는 아무것도 보내지 않습니다. `projectHub.resumeAgentsOnRestart`로 끌 수 있습니다.
 
 ## 서비스·프로세스
 
@@ -315,8 +336,12 @@ code --install-extension claude-project-hub-0.11.0.vsix
 
 ## 터미널 배치
 
-- **그리드**: ⫽ 버튼으로 에이전트 터미널을 에디터 2열 그리드에 배치합니다(활성 프로젝트만 / 전체 선택). 활성 프로젝트 그리드는 전환을 따라가며, 이전 터미널은 세션을 유지한 채 패널로 복귀합니다.
-- `projectHub.terminalsInEditor`를 켜면 처음부터 에디터 탭으로 열립니다.
+VS Code는 터미널 탭 목록을 프로젝트별로 거르는 기능을 제공하지 않으므로, Project Hub는 활성 프로젝트 터미널을 에디터 영역으로 옮겨서 그것만 보이게 합니다.
+
+- **프로젝트 그리드** (`projectHub.projectTerminalGrid`, 기본 켜짐): 전환할 때마다 활성 프로젝트의 에이전트 터미널이 에디터 영역을 2열 그리드로 채웁니다(터미널마다 한 칸, 최대 6칸). 다른 프로젝트 터미널은 세션을 유지한 채 닫힌 패널로 돌아갑니다. 활성 프로젝트에 에이전트를 새로 열면 그리드를 다시 짭니다. 열려 있던 파일은 첫 칸의 뒤쪽 탭으로 남습니다.
+- **⫽ 버튼**: 원할 때 배치합니다. *전체 프로젝트*는 프로젝트마다 한 칸, 그 프로젝트 터미널은 칸 안의 탭으로 합칩니다. *활성 프로젝트만*은 터미널마다 한 칸입니다. 프로젝트 그리드가 켜져 있으면 다음 전환이나 에이전트 추가 시 활성 프로젝트 그리드로 돌아갑니다.
+- 프로젝트 그리드를 끈 경우: `projectHub.splitAgentTerminals`는 프로젝트의 다음 에이전트를 기존 터미널 옆에 분할해 열고, `projectHub.terminalsInEditor`는 에이전트 터미널을 에디터 탭으로 엽니다.
+- VS Code는 터미널만 든 에디터 그룹을 자동으로 잠그므로(`workbench.editor.autoLockGroups`) 파일은 다른 그룹에 열립니다. Project Hub는 다시 배치하기 전에 잠금을 풀고 빈 그룹을 닫습니다.
 - 아무 터미널이나 우클릭 → **이 터미널을 프로젝트에 연결**로 직접 연 터미널을 편입할 수 있습니다.
 
 ## 브리핑·사용량
@@ -346,14 +371,17 @@ code --install-extension claude-project-hub-0.11.0.vsix
 | 설정 | 기본값 | 설명 |
 |---|---|---|
 | `projectHub.port` | `43917` | 알림 수신 로컬 HTTP 포트 (변경 시 hook 재설치 필요) |
-| `projectHub.agents` | Claude/Gemini/Codex/Antigravity | 에이전트 목록 |
+| `projectHub.agents` | Claude/Gemini/Codex/Antigravity/OpenCode/Terminal | 에이전트 목록 |
 | `projectHub.defaultAgent` | `claude` | 자동 시작·기본 터미널 버튼에 쓸 에이전트 |
 | `projectHub.focusClaudeTerminalOnSwitch` | `true` | 전환 시 해당 프로젝트 터미널 표시 |
 | `projectHub.switchOnRowClick` | `true` | 에이전트·사용량·서비스 행 클릭 시 먼저 그 프로젝트로 전환 |
 | `projectHub.autoStartClaudeOnSwitch` | `true` | 터미널이 없으면 기본 에이전트 자동 시작 |
 | `projectHub.autoInstallHooks` | `true` | 알림 hook 자동 설치 |
 | `projectHub.restoreEditorsOnSwitch` | `true` | 프로젝트별 에디터 탭 저장·복원 |
-| `projectHub.terminalsInEditor` | `false` | 에이전트 터미널을 에디터 탭으로 열기 |
+| `projectHub.projectTerminalGrid` | `true` | 활성 프로젝트의 에이전트 터미널만 에디터 그리드로 표시 |
+| `projectHub.resumeAgentsOnRestart` | `true` | VS Code 완전 재시작 후 복원된 터미널에서 에이전트 재실행 |
+| `projectHub.splitAgentTerminals` | `true` | 프로젝트의 다음 에이전트를 기존 터미널 옆에 분할해 열기 (프로젝트 그리드를 끈 경우만) |
+| `projectHub.terminalsInEditor` | `false` | 에이전트 터미널을 에디터 탭으로 열기 (프로젝트 그리드를 끈 경우만) |
 | `projectHub.fileTreeExclude` | `.git`, `node_modules`, `.venv`, `__pycache__`, `dist`, `out`, `.next` | 파일 트리에서 숨길 이름 (glob 아님) |
 | `projectHub.showAllProcesses` | `false` | MCP·헬퍼까지 프로세스 목록에 표시 |
 | `projectHub.windowColor` | `false` | 타이틀 바를 프로젝트 색으로 물들이기 |
@@ -384,6 +412,18 @@ code --install-extension claude-project-hub-0.11.0.vsix
 
 **프로젝트 하위 행을 클릭했는데 Explorer가 이전 프로젝트를 그대로 보여줍니다.**
 에이전트·사용량·서비스 행을 클릭하면 기본적으로 그 프로젝트로 전환됩니다. 전환되지 않는다면 `projectHub.switchOnRowClick`이 꺼져 있는 것입니다. 이 설정은 Explorer를 그대로 둔 채 다른 프로젝트의 터미널만 확인하고 싶을 때를 위한 것입니다. 프로젝트 행 본체는 설정과 무관하게 항상 전환합니다.
+
+**Python 프로젝트에서 에이전트가 저절로 종료되고, 터미널에 `Activate.ps1` / `deactivate` 줄이 보입니다.**
+Python Environments 확장은 터미널에 명령을 입력하는 방식으로 가상환경을 켭니다. 프로젝트 전환으로 워크스페이스 폴더가 바뀌면, 이미 에이전트가 실행 중인 터미널에 `deactivate`와 activate 명령을 다시 입력하고, 에이전트는 그 입력을 받아 종료됩니다. 사용자 설정에서 터미널에 명령을 입력하지 않게 하세요.
+
+```json
+"python-envs.terminal.autoActivationType": "off"
+```
+
+`shellStartup`도 명령 입력을 피하지만 PowerShell 프로필을 수정합니다. 에이전트는 보통 프로젝트의 `.venv`를 스스로 찾아 씁니다.
+
+**에이전트 명령의 첫 글자가 잘립니다 (`laude --continue`).**
+0.15.4에서 고쳤습니다. 셸이 준비됐다고 알린 뒤(shell integration) 명령을 보내고, 그 기능이 없는 셸은 4초 뒤에 보냅니다.
 
 **hook이 에이전트 작업을 막지는 않나요?**
 막지 않습니다. `curl`에 3초 타임아웃이 걸려 있고, 서버가 꺼져 있으면 조용히 실패합니다.
