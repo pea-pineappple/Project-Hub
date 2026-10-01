@@ -1,5 +1,5 @@
 {
-  "ext.description": "One VS Code window, many projects: switch from a sidebar without reloading, keep Claude/Gemini/Codex sessions isolated per project, and get notified when an agent finishes.",
+  "ext.description": "One VS Code window, many projects: switch from a sidebar without reloading, run Claude/Codex/Gemini/OpenCode and other agent CLIs per project, get notified when one finishes, and see projects on your other PCs and SSH servers in the same list.",
   "view.projects": "Projects",
   "view.services": "Services",
   "view.briefing": "Briefing",
@@ -11,6 +11,7 @@
   "cmd.switchProject": "Project Hub: Switch Project",
   "cmd.quickSwitch": "Project Hub: Quick Switch Project",
   "cmd.removeProject": "Remove from List",
+  "cmd.forgetHost": "Hide This PC/Server from the List",
   "cmd.openTerminal": "Open AI Terminal (Default Agent)",
   "cmd.resumeTerminal": "Resume (Default Agent, Restore Last Session)",
   "cmd.pickSession": "Open a Claude Session (Multi-Session)",

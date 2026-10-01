@@ -9,6 +9,9 @@ import { AvatarStore, PALETTE, colorOf, contrastText } from './avatars';
 import { asProject, HubNode, ProjectDragAndDrop } from './projectTree';
 import { ProjectTreeProvider } from './projectTree';
 import { TerminalManager, sendWhenReady } from './terminalManager';
+import { initRemotePersist, liveTmuxSessions } from './remotePersist';
+import { migrateFromOldId } from './legacyId';
+import { HostEntry, currentHost, forgetHost, initHostRegistry, openOnHost, publishHost, takePendingSwitch } from './hostRegistry';
 import { NotificationServer, HookEvent, HookPayload } from './notificationServer';
 import { installAgentHooks, hasAgentHooks, supportsHooks } from './hookInstaller';
 import {
@@ -34,6 +37,9 @@ import { invalidateUsageCache } from './usage';
 export function activate(context: vscode.ExtensionContext): void {
     const config = () => vscode.workspace.getConfiguration('projectHub');
     initSessionLabels(context);
+    initRemotePersist(context);
+    initHostRegistry(context);
+    migrateFromOldId(context);
     const manager = new ProjectManager(context);
     // 에이전트 터미널이 닫히면 (Stop hook이 못 오므로) '작업 중' 표시를 정리
     const terminals = new TerminalManager(context, (agentId, projectPath, sessionId) => {
@@ -58,6 +64,29 @@ export function activate(context: vscode.ExtensionContext): void {
         dragAndDropController: new ProjectDragAndDrop(manager)
     });
     context.subscriptions.push(treeView);
+
+    // ── 여러 PC·서버 목록 ─────────────────────────────────────────
+    // 목록 제목 옆에 이 창이 연결된 곳(로컬 PC / SSH 서버)을 표시
+    const thisHost = currentHost();
+    treeView.description = thisHost
+        ? `${thisHost.kind === 'ssh' ? 'SSH' : vscode.l10n.t('Local')} · ${thisHost.label}`
+        : vscode.env.remoteName;
+
+    // 이 호스트의 프로젝트 목록을 공유 레지스트리에 올려 다른 창(다른 PC·서버)에서도 보이게 한다.
+    // 상태 변경 등으로 onDidChange가 자주 오므로 목록이 실제로 바뀔 때만 쓴다.
+    let lastPublished = '';
+    function publishThisHost(): void {
+        const hubFile = getHubWorkspaceFile(context);
+        const projects = manager.getProjects();
+        const snapshot = JSON.stringify([projects, fs.existsSync(hubFile)]);
+        if (snapshot === lastPublished) {
+            return;
+        }
+        lastPublished = snapshot;
+        void publishHost(projects, fs.existsSync(hubFile) ? hubFile : undefined);
+    }
+    publishThisHost();
+    context.subscriptions.push(manager.onDidChange(() => publishThisHost()));
 
     const servicesTree = new ServicesTreeProvider(manager, avatars, terminals);
     const servicesView = vscode.window.createTreeView('projectHub.services', {
@@ -246,7 +275,7 @@ export function activate(context: vscode.ExtensionContext): void {
     }
 
     function openAgentSession(project: Project, agent: AgentDef, sessionId: string): void {
-        openAgentSession(project, agent, sessionId);
+        terminals.openSession(project, agent, sessionId, true);
         afterTerminalOpened(project);
     }
 
@@ -264,6 +293,38 @@ export function activate(context: vscode.ExtensionContext): void {
     // "전체 프로젝트" 그리드는 여러 프로젝트를 동시에 보는 목적이므로 전환해도 유지.
     let activeGrid: { projectPath: string; terminals: vscode.Terminal[] } | undefined;
     const gridPause = () => new Promise(resolve => setTimeout(resolve, 150));
+
+    /**
+     * 조건이 이미 맞으면 즉시, 아니면 이벤트가 올 때마다 확인해 맞는 순간 끝난다 (상한 timeoutMs).
+     * 터미널 이동은 완료를 알려 주는 API가 없어 예전엔 단계마다 150ms씩 고정으로 기다렸는데,
+     * 실제로는 수십 ms면 끝나므로 이벤트로 기다리면 전환 시 멈칫거림이 줄어든다.
+     */
+    function waitUntil(check: () => boolean, events: vscode.Event<unknown>[], timeoutMs: number): Promise<void> {
+        if (check()) {
+            return Promise.resolve();
+        }
+        return new Promise(resolve => {
+            const subs: vscode.Disposable[] = [];
+            const done = () => {
+                clearTimeout(timer);
+                subs.forEach(d => d.dispose());
+                resolve();
+            };
+            const timer = setTimeout(done, timeoutMs);
+            for (const ev of events) {
+                subs.push(ev(() => check() && done()));
+            }
+        });
+    }
+    const TAB_EVENTS: vscode.Event<unknown>[] = [
+        vscode.window.tabGroups.onDidChangeTabs,
+        vscode.window.tabGroups.onDidChangeTabGroups
+    ];
+    const terminalTabCount = () =>
+        vscode.window.tabGroups.all.reduce(
+            (n, g) => n + g.tabs.filter(t => t.input instanceof vscode.TabInputTerminal).length,
+            0
+        );
 
     /**
      * cells[i]의 터미널들을 그리드 i번째 칸에 탭으로 넣는다.
@@ -284,21 +345,14 @@ export function activate(context: vscode.ExtensionContext): void {
             orientation: 0,
             groups: rightRows > 0 ? [col(leftRows), col(rightRows)] : [col(leftRows)]
         });
-        const focusCmds = [
-            'workbench.action.focusFirstEditorGroup',
-            'workbench.action.focusSecondEditorGroup',
-            'workbench.action.focusThirdEditorGroup',
-            'workbench.action.focusFourthEditorGroup',
-            'workbench.action.focusFifthEditorGroup',
-            'workbench.action.focusSixthEditorGroup'
-        ];
         for (let i = 0; i < cells.length; i++) {
             for (const term of cells[i]) {
-                await vscode.commands.executeCommand(focusCmds[Math.min(i, k - 1)]);
+                await vscode.commands.executeCommand(FOCUS_GROUP[Math.min(i, k - 1)]);
+                const before = terminalTabCount();
                 term.show(false);
-                await gridPause();
+                await waitUntil(() => vscode.window.activeTerminal === term, [vscode.window.onDidChangeActiveTerminal], 300);
                 await vscode.commands.executeCommand('workbench.action.terminal.moveToEditor');
-                await gridPause();
+                await waitUntil(() => terminalTabCount() > before, TAB_EVENTS, 500);
             }
         }
         await vscode.commands.executeCommand('workbench.action.closePanel');
@@ -321,6 +375,17 @@ export function activate(context: vscode.ExtensionContext): void {
                 return;
             }
             const incoming = terminals.allLiveTerminals([project]);
+            // 이미 같은 터미널들로 그리드가 짜여 있고 모두 에디터에 떠 있으면 다시 할 필요가 없다
+            // (전환 직후 자동 시작·포커스 이벤트 등으로 연달아 불릴 때 깜빡임 방지)
+            if (
+                activeGrid &&
+                samePath(activeGrid.projectPath, project.path) &&
+                activeGrid.terminals.length === incoming.length &&
+                incoming.every(t => activeGrid!.terminals.includes(t)) &&
+                terminalTabCount() === incoming.length
+            ) {
+                return;
+            }
             // 에디터의 터미널을 모두 패널로 모은 뒤 다시 배치 (이미 에디터에 있는 터미널은
             // show() 시 제자리에서 열려 칸 순서가 어긋나므로)
             await moveAllEditorTerminalsToPanel();
@@ -356,15 +421,23 @@ export function activate(context: vscode.ExtensionContext): void {
      * 빈 칸(가운데 VS Code 로고 + 잠금 해제 아이콘)으로 남아 새 그리드를 밀어낸다.
      */
     async function unlockAndCloseEmptyGroups(): Promise<void> {
-        // 뒤 칸부터 닫아야 앞 칸들의 번호가 바뀌지 않는다
-        const groups = [...vscode.window.tabGroups.all].sort((a, b) => b.viewColumn - a.viewColumn);
-        for (const g of groups) {
-            if (g.viewColumn > FOCUS_GROUP.length) {
-                continue;
-            }
-            await vscode.commands.executeCommand(FOCUS_GROUP[g.viewColumn - 1]);
+        if (vscode.window.tabGroups.all.length <= 1) {
+            return;
+        }
+        // 모든 그룹의 잠금을 푼다. 빈 그룹만 골라 풀면, 터미널을 막 뺀 직후엔 탭 목록이
+        // 아직 갱신 전이라 빈 그룹이 비어 있지 않은 것으로 보여 빠지고, 잠긴 채 남은 그룹은
+        // joinAllGroups에서도 빠져 빈 칸이 그리드를 오른쪽으로 밀어낸다. (그룹당 명령 2개라 비용은 작다)
+        // 뒤 칸부터 처리해야 닫을 때 앞 칸들의 번호가 바뀌지 않는다
+        const columns = vscode.window.tabGroups.all
+            .map(g => g.viewColumn)
+            .filter(c => c <= FOCUS_GROUP.length)
+            .sort((a, b) => b - a);
+        for (const column of columns) {
+            await vscode.commands.executeCommand(FOCUS_GROUP[column - 1]);
             await vscode.commands.executeCommand('workbench.action.unlockEditorGroup');
-            if (g.tabs.length === 0 && vscode.window.tabGroups.all.length > 1) {
+            // 닫기 판단은 잠금 해제 후 최신 상태로
+            const g = vscode.window.tabGroups.all.find(x => x.viewColumn === column);
+            if (g && g.tabs.length === 0 && vscode.window.tabGroups.all.length > 1) {
                 await vscode.commands.executeCommand('workbench.action.closeGroup');
             }
         }
@@ -389,11 +462,21 @@ export function activate(context: vscode.ExtensionContext): void {
             if (!target) {
                 return;
             }
-            await vscode.commands.executeCommand(FOCUS_GROUP[target.column - 1]);
-            await vscode.commands.executeCommand('workbench.action.openEditorAtIndex', target.index);
-            await gridPause();
+            const { column, index } = target;
+            const before = terminalTabCount();
+            await vscode.commands.executeCommand(FOCUS_GROUP[column - 1]);
+            await vscode.commands.executeCommand('workbench.action.openEditorAtIndex', index);
+            // 그 터미널 탭이 활성화된 뒤에 옮겨야 다른 터미널을 옮기지 않는다
+            await waitUntil(
+                () => {
+                    const g = vscode.window.tabGroups.activeTabGroup;
+                    return g.viewColumn === column && !!g.activeTab && g.tabs.indexOf(g.activeTab) === index;
+                },
+                TAB_EVENTS,
+                300
+            );
             await vscode.commands.executeCommand('workbench.action.terminal.moveToTerminalPanel');
-            await gridPause();
+            await waitUntil(() => terminalTabCount() < before, TAB_EVENTS, 500);
         }
     }
 
@@ -709,6 +792,18 @@ export function activate(context: vscode.ExtensionContext): void {
             }
         }),
 
+        vscode.commands.registerCommand('projectHub.openOnHost', (host: HostEntry, project: Project) =>
+            openOnHost(host, project)
+        ),
+
+        vscode.commands.registerCommand('projectHub.forgetHost', async (node?: HubNode) => {
+            if (node?.kind !== 'host') {
+                return;
+            }
+            await forgetHost(node.host.key);
+            manager.refresh();
+        }),
+
         vscode.commands.registerCommand('projectHub.addCurrentFolder', async () => {
             const current = manager.getActivePath();
             if (!current) {
@@ -959,8 +1054,14 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.commands.registerCommand(
             'projectHub.openAgentById',
             async (project: Project, agentId: string, sessionId?: string) => {
-                await switchBeforeRowAction(project);
                 const agent = getAgent(agentId) ?? getDefaultAgent();
+                // 살아 있는 세션인지는 전환 "전에" 판단해야 한다: 전환하면 완료/응답 대기 상태가
+                // 확인 처리로 지워져서, 방금 누른 행의 세션이 종료된 것으로 오판되고
+                // --resume으로 같은 세션을 하나 더 열게 된다 (같은 대화가 두 터미널에서 동시에 진행)
+                const wasLive = manager
+                    .getAgentStatuses(project)
+                    .some(s => s.agentId === agent.id && s.sessionId === sessionId);
+                await switchBeforeRowAction(project);
 
                 if (sessionId && sessionId !== 'default' && canPickSessions(agent)) {
                     // 이 세션 전용으로 우리가 연 터미널이 있으면 그대로 표시
@@ -972,10 +1073,9 @@ export function activate(context: vscode.ExtensionContext): void {
                     // 상태 행(작업 중/응답 대기/완료)에 있는 세션은 어딘가에서 살아 있는 것.
                     // 기본 터미널에서 시작된 세션은 전용 터미널이 없으므로, 같은 세션을
                     // --resume으로 또 열면 대화가 분기된다 → 그 에이전트의 기존 터미널을 표시.
-                    const isLive = manager
-                        .getAgentStatuses(project)
-                        .some(s => s.agentId === agent.id && s.sessionId === sessionId);
-                    if (isLive) {
+                    // 상태 목록에 없어도 그 에이전트 터미널이 살아 있으면 세션이 거기서 돌고 있을 수 있다
+                    // (예: --continue로 연 기본 터미널) → 새로 열지 않고 그 터미널을 보여 준다
+                    if (wasLive || terminals.findLive(project, agent.id)) {
                         const live = terminals.findLive(project, agent.id) ?? terminals.findForProject(project);
                         if (live) {
                             live.show(false);
@@ -997,7 +1097,7 @@ export function activate(context: vscode.ExtensionContext): void {
                             setSessionLabel(sessionId, sanitizeLabel(claudeSessionPreview(project.path, sessionId)));
                         }
                         ensureHooks(agent.id);
-                        terminals.openSession(project, agent, sessionId, true);
+                        openAgentSession(project, agent, sessionId);
                         return;
                     }
                 }
@@ -1519,8 +1619,51 @@ export function activate(context: vscode.ExtensionContext): void {
             sendWhenReady(r.terminal, command);
         }
     }
+    // ── 원격 재연결 시 tmux 세션에 다시 붙기 ───────────────────────
+    // 원격 서버가 재시작돼 터미널이 사라져도 tmux 세션(에이전트)은 살아 있다.
+    // 살아 있는 우리 세션마다 관리 터미널이 없으면 열어서 붙는다
+    // (open/openSession이 보내는 tmux new-session -A 가 기존 세션에 attach).
+    function reattachTmuxSessions(): void {
+        for (const s of liveTmuxSessions()) {
+            const project = manager.findByPath(s.projectPath);
+            const agent = project ? getAgent(s.agentId) : undefined;
+            if (!project || !agent) {
+                continue;
+            }
+            if (s.sessionId) {
+                if (!terminals.findSessionTerminal(project, agent.id, s.sessionId)) {
+                    terminals.openSession(project, agent, s.sessionId, false);
+                }
+            } else if (!terminals.findLive(project, agent.id)) {
+                terminals.open(project, agent, false, false);
+            }
+        }
+    }
+
+    // ── 다른 창에서 요청한 전환 ────────────────────────────────────
+    // 다른 PC·서버 목록의 프로젝트를 누르면 그 호스트의 창을 열면서 전환 요청을 남긴다.
+    // 새로 열린 창은 시작할 때, 이미 열려 있던 창은 포커스를 받을 때 요청을 수행한다.
+    async function applyPendingSwitch(): Promise<void> {
+        const target = await takePendingSwitch();
+        const project = target ? manager.findByPath(target) : undefined;
+        if (project && !manager.isActive(project)) {
+            await switchTo(project);
+        }
+    }
+    context.subscriptions.push(
+        vscode.window.onDidChangeWindowState(e => {
+            if (e.focused) {
+                // 다른 창이 목록을 바꿨을 수 있으므로 트리 갱신
+                manager.refresh();
+                void applyPendingSwitch();
+            }
+        })
+    );
+
     // 복원된 셸이 프롬프트를 띄울 시간을 준 뒤 확인하고, 그리드 모드면 활성 프로젝트 그리드 구성
     setTimeout(async () => {
+        await applyPendingSwitch();
+        reattachTmuxSessions();
         await reviveRestoredAgents();
         const activePath = manager.getActivePath();
         const active = activePath ? manager.findByPath(activePath) : undefined;

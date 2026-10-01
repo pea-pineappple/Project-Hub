@@ -14,6 +14,21 @@ const ANCHOR_LABEL = '⌂ Hub';
  */
 const PROJECTS_FILE = path.join(os.homedir(), '.project-hub', 'projects.json');
 
+/**
+ * globalState 백업 키. 원격(SSH 등) 창의 globalState는 로컬 PC 쪽 저장소를 함께 쓰므로,
+ * 같은 키를 쓰면 원격 서버에 로컬 Windows 프로젝트 목록이 옮겨 오고(반대로 덮어쓰기도 됨)
+ * "Folder does not exist: c:\…" 오류가 난다. 원격이면 호스트별로 키를 나눈다.
+ */
+function backupKey(): string {
+    return vscode.env.remoteName ? `${STORE_KEY}@${vscode.env.remoteName}:${os.hostname()}` : STORE_KEY;
+}
+
+/** 이 확장이 실행 중인 OS 형식의 절대 경로인지 (Windows 창에 /home/…, 리눅스 원격에 c:\… 가 섞이지 않게) */
+function isNativePath(p: string): boolean {
+    const windowsStyle = /^[a-zA-Z]:[\\/]|^\\\\/.test(p);
+    return process.platform === 'win32' ? windowsStyle : !windowsStyle && p.startsWith('/');
+}
+
 /** 허브 .code-workspace 파일 경로 (모든 창이 동일 경로를 참조) */
 export function getHubWorkspaceFile(context: vscode.ExtensionContext): string {
     return path.join(context.globalStorageUri.fsPath, 'project-hub.code-workspace');
@@ -57,7 +72,7 @@ export class ProjectManager {
     constructor(private context: vscode.ExtensionContext) {
         // 구버전(globalState 저장) 마이그레이션: 파일이 없고 globalState에 데이터가 있으면 파일로 이전
         if (!fs.existsSync(PROJECTS_FILE)) {
-            const legacy = this.context.globalState.get<Project[]>(STORE_KEY, []);
+            const legacy = this.context.globalState.get<Project[]>(backupKey(), []).filter(p => isNativePath(p.path));
             if (legacy.length) {
                 this.writeProjectsFile(legacy);
             }
@@ -69,13 +84,13 @@ export class ProjectManager {
             if (fs.existsSync(PROJECTS_FILE)) {
                 const data = JSON.parse(fs.readFileSync(PROJECTS_FILE, 'utf8'));
                 if (Array.isArray(data?.projects)) {
-                    return data.projects.filter((p: Project) => p && p.name && p.path);
+                    return data.projects.filter((p: Project) => p && p.name && p.path && isNativePath(p.path));
                 }
             }
         } catch {
             // 파일 손상 시 globalState 폴백
         }
-        return this.context.globalState.get<Project[]>(STORE_KEY, []);
+        return this.context.globalState.get<Project[]>(backupKey(), []).filter(p => isNativePath(p.path));
     }
 
     private writeProjectsFile(projects: Project[]): void {
@@ -85,7 +100,7 @@ export class ProjectManager {
 
     private async saveProjects(projects: Project[]): Promise<void> {
         this.writeProjectsFile(projects);
-        await this.context.globalState.update(STORE_KEY, projects);
+        await this.context.globalState.update(backupKey(), projects);
         this._onDidChange.fire();
     }
 

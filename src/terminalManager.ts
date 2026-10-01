@@ -3,6 +3,7 @@ import { Project } from './types';
 import { normalizePath, isWithin } from './paths';
 import { AgentDef, getAgents, getDefaultAgent, resolveCommand, resolveSessionCommand } from './agents';
 import { sessionTag } from './sessionLabels';
+import { wrapForPersistence } from './remotePersist';
 
 const AGENT_ICONS: Record<string, string> = {
     claude: 'sparkle',
@@ -331,7 +332,7 @@ export class TerminalManager {
                 iconPath: new vscode.ThemeIcon(AGENT_ICONS[agent.id] ?? 'robot'),
                 location: this.location(project)
             });
-            const command = resolveCommand(agent, resume, project.path);
+            const command = wrapForPersistence(resolveCommand(agent, resume, project.path), project, agent.id);
             if (command) {
                 sendWhenReady(terminal, command);
             }
@@ -358,7 +359,7 @@ export class TerminalManager {
                 iconPath: new vscode.ThemeIcon(AGENT_ICONS[agent.id] ?? 'robot'),
                 location: this.location(project)
             });
-            sendWhenReady(terminal, command);
+            sendWhenReady(terminal, wrapForPersistence(command, project, agent.id, sessionId));
             this.terminals.set(this.key(agent.id, project.path, sessionId), terminal);
         }
         terminal.show(!focus);

@@ -120,5 +120,14 @@
   "{0}h ago": "{0}時間前",
   "{0}m ago": "{0}分前",
   "✅ {0}: {1} finished its task.": "✅ {0}: {1} の作業が完了しました。",
-  "✅ {0}: {1} finished its task. (folder not in the list)": "✅ {0}: {1} の作業が完了しました。(リストにないフォルダー)"
+  "✅ {0}: {1} finished its task. (folder not in the list)": "✅ {0}: {1} の作業が完了しました。(リストにないフォルダー)",
+  "tmux is not installed on this remote host, so agents run in plain terminals and may stop when the connection drops. Install tmux (e.g. sudo apt install tmux) to keep them running.": "このリモートホストには tmux がないため、エージェントは通常のターミナルで実行され、接続が切れると停止する可能性があります。実行を継続するには tmux をインストールしてください(例: sudo apt install tmux)。",
+  "Don't Show Again": "今後表示しない",
+  "Local": "ローカル",
+  "Projects on SSH server {0} ({1})": "SSH サーバー {0} のプロジェクト ({1})",
+  "Projects on local PC {0}": "ローカル PC {0} のプロジェクト",
+  "Click: open in a window connected to {0} (switches to it if already open)": "クリック: {0} に接続したウィンドウで開く(既に開いていればそのウィンドウへ移動)",
+  "Show Extension": "拡張機能を表示",
+  "The old \"Project Hub for Claude Code\" ({0}) is still installed. It conflicts with this version (same sidebar, commands and notification port). Please uninstall it.": "旧「Project Hub for Claude Code」({0})がまだインストールされています。サイドバー・コマンド・通知ポートが重複してこのバージョンと競合するため、アンインストールしてください。",
+  "this window": "このウィンドウ"
 }

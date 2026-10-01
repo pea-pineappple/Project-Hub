@@ -1,5 +1,5 @@
 {
-  "ext.description": "一个 VS Code 窗口管理多个项目：从侧边栏切换且无需重新加载，Claude/Gemini/Codex 会话按项目隔离，代理完成时收到通知。",
+  "ext.description": "一个 VS Code 窗口管理多个项目：从侧边栏切换且无需重新加载，按项目运行 Claude/Codex/Gemini/OpenCode 等代理 CLI，完成时收到通知，并在同一列表中查看其他 PC 和 SSH 服务器上的项目。",
   "view.projects": "项目",
   "view.services": "服务",
   "view.briefing": "简报",
@@ -11,6 +11,7 @@
   "cmd.switchProject": "Project Hub: 切换项目",
   "cmd.quickSwitch": "Project Hub: 快速切换项目",
   "cmd.removeProject": "从列表中移除",
+  "cmd.forgetHost": "从列表中隐藏此 PC/服务器",
   "cmd.openTerminal": "打开 AI 终端（默认代理）",
   "cmd.resumeTerminal": "继续上次会话（默认代理，恢复上一会话）",
   "cmd.pickSession": "选择 Claude 会话打开（多会话）",
