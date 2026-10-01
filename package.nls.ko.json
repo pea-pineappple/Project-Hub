@@ -1,5 +1,5 @@
 {
-  "ext.description": "VS Code 창 하나로 여러 프로젝트: 리로드 없이 사이드바에서 전환하고, Claude/Gemini/Codex 세션을 프로젝트별로 격리하고, 에이전트가 끝나면 알림을 받으세요.",
+  "ext.description": "VS Code 창 하나로 여러 프로젝트: 리로드 없이 사이드바에서 전환하고, Claude/Codex/Gemini/OpenCode 등 에이전트 CLI를 프로젝트별로 실행하고, 끝나면 알림을 받고, 다른 PC·SSH 서버의 프로젝트까지 한 목록에서 봅니다.",
   "view.projects": "프로젝트",
   "view.services": "서비스",
   "view.briefing": "브리핑",
@@ -11,6 +11,7 @@
   "cmd.switchProject": "Project Hub: 프로젝트 전환",
   "cmd.quickSwitch": "Project Hub: 프로젝트 빠른 전환",
   "cmd.removeProject": "리스트에서 제거",
+  "cmd.forgetHost": "이 PC/서버를 목록에서 숨기기",
   "cmd.openTerminal": "AI 터미널 열기 (기본 에이전트)",
   "cmd.resumeTerminal": "이어서 열기 (기본 에이전트, 이전 세션 복원)",
   "cmd.pickSession": "Claude 세션 골라서 열기 (다중 세션)",

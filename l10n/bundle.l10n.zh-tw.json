@@ -120,5 +120,14 @@
   "{0}h ago": "{0}小時前",
   "{0}m ago": "{0}分鐘前",
   "✅ {0}: {1} finished its task.": "✅ {0}:{1} 已完成任務。",
-  "✅ {0}: {1} finished its task. (folder not in the list)": "✅ {0}:{1} 已完成任務。(資料夾不在清單中)"
+  "✅ {0}: {1} finished its task. (folder not in the list)": "✅ {0}:{1} 已完成任務。(資料夾不在清單中)",
+  "tmux is not installed on this remote host, so agents run in plain terminals and may stop when the connection drops. Install tmux (e.g. sudo apt install tmux) to keep them running.": "此遠端主機未安裝 tmux，代理會在一般終端機中執行，連線中斷時可能停止。如需持續執行，請安裝 tmux(例如 sudo apt install tmux)。",
+  "Don't Show Again": "不再顯示",
+  "Local": "本機",
+  "Projects on SSH server {0} ({1})": "SSH 伺服器 {0} 上的專案 ({1})",
+  "Projects on local PC {0}": "本機 PC {0} 上的專案",
+  "Click: open in a window connected to {0} (switches to it if already open)": "按一下：在連線到 {0} 的視窗中開啟(若已開啟則切換到該視窗)",
+  "Show Extension": "顯示擴充功能",
+  "The old \"Project Hub for Claude Code\" ({0}) is still installed. It conflicts with this version (same sidebar, commands and notification port). Please uninstall it.": "舊版「Project Hub for Claude Code」({0})仍已安裝。它與此版本衝突(側邊欄、命令與通知連接埠相同)，請將其解除安裝。",
+  "this window": "目前視窗"
 }

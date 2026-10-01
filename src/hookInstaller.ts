@@ -22,9 +22,22 @@ interface HookEntry {
  * 모든 에이전트 공통 알림 명령. Claude/Codex/Gemini 셋 다 hook 페이로드를
  * stdin JSON(cwd 필드 포함)으로 전달하므로 curl로 그대로 서버에 중계한다.
  * (curl은 Windows 10+/macOS/Linux 기본 포함)
+ *
+ * Windows는 에이전트마다 hook 실행 셸이 다르다 — Claude는 Git Bash, Gemini는 powershell -Command.
+ * PowerShell 5.1에서 `curl`은 Invoke-WebRequest 별칭이고 `@-`는 문법 오류라 알림이 전혀 오지 않았다.
+ * `curl.exe … -d '@-'`는 bash·PowerShell·cmd 모두에서 같은 의미로 동작하고, stdin을 그대로 받아
+ * 한글 경로·프롬프트도 깨지지 않는다 ($input 파이프는 PS 5.1 기본 인코딩 때문에 한글이 깨짐).
  */
 function curlCommand(port: number, route: string, agentId: string): string {
-    return `curl -s -m 3 -X POST -H "Content-Type: application/json" -d @- "http://127.0.0.1:${port}/hook/${route}?agent=${agentId}"`;
+    const url = `"http://127.0.0.1:${port}/hook/${route}?agent=${agentId}"`;
+    return process.platform === 'win32'
+        ? `curl.exe -s -m 3 -X POST -H "Content-Type: application/json" -d '@-' ${url}`
+        : `curl -s -m 3 -X POST -H "Content-Type: application/json" -d @- ${url}`;
+}
+
+/** 현재 형식으로 설치된 명령인지 — 옛 형식(Windows에서 curl)은 자동 재설치되도록 */
+function isCurrentFormat(command: string): boolean {
+    return process.platform === 'win32' ? command.startsWith('curl.exe ') : command.startsWith('curl ');
 }
 
 /** JSONC(주석/트레일링 콤마) 허용 — Gemini settings.json 등은 주석을 포함할 수 있다 */
@@ -225,6 +238,8 @@ export function hasAgentHooks(agentId: string, port?: number): boolean {
         return false;
     }
     const signature = port !== undefined ? new RegExp(`127\\.0\\.0\\.1:${port}/hook/`) : HOOK_SIGNATURE;
+    // 포트까지 확인하는 경우(자동 설치 판단)엔 명령 형식도 현재 것이어야 인정 → 옛 형식은 재설치
+    const ok = (command: string) => signature.test(command) && (port === undefined || isCurrentFormat(command));
     try {
         const settings = readJson(fileOf());
         // Antigravity는 구조가 달라 별도 검사 (project-hub 키 아래 이벤트별 배열)
@@ -234,8 +249,8 @@ export function hasAgentHooks(agentId: string, port?: number): boolean {
                 Array.isArray(arr) &&
                 arr.some(
                     (e: any) =>
-                        signature.test(e?.command ?? '') ||
-                        e?.hooks?.some((h: any) => signature.test(h?.command ?? ''))
+                        ok(e?.command ?? '') ||
+                        e?.hooks?.some((h: any) => ok(h?.command ?? ''))
                 );
             return !!cfg && has(cfg.PreInvocation) && has(cfg.Stop) && has(cfg.PreToolUse);
         }
@@ -245,7 +260,7 @@ export function hasAgentHooks(agentId: string, port?: number): boolean {
             const entries = events[event];
             return (
                 Array.isArray(entries) &&
-                entries.some(e => e?.hooks?.some(h => signature.test(h?.command ?? '')))
+                entries.some(e => e?.hooks?.some(h => ok(h?.command ?? '')))
             );
         });
     } catch {

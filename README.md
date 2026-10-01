@@ -1,8 +1,10 @@
-# Project Hub for Claude Code
+# Project Hub — Multi-Project & Agent Workspace
 
 **One VS Code window, many projects, isolated AI agent sessions.**
 
-Switch projects from a sidebar list without reloading the window — terminals and your Claude / Gemini / Codex / Antigravity sessions keep running in the background, and a notification (with a one-click **Switch to Project** button) tells you when an agent finishes or needs your input.
+Switch projects from a sidebar list without reloading the window — terminals and your Claude / Codex / Gemini / Antigravity / OpenCode sessions keep running in the background, and a notification (with a one-click **Switch to Project** button) tells you when an agent finishes or needs your input. Projects on your other PCs and SSH servers show up in the same list.
+
+*Formerly "Project Hub for Claude Code" — it started as a Claude Code helper and grew into a multi-project, multi-agent workspace. The extension ID is unchanged, so updates keep your data.*
 
 *UI languages: English · 한국어 · 日本語 · 简体中文 · 繁體中文 (follows the VS Code display language).*
 *[한국어 문서는 아래에 있습니다 →](#한국어)*
@@ -55,7 +57,7 @@ This extension is distributed as a `.vsix` file.
 **From the command line**
 
 ```bash
-code --install-extension claude-project-hub-0.11.0.vsix
+code --install-extension project-hub-<version>.vsix
 ```
 
 **From the VS Code UI**
@@ -63,6 +65,8 @@ code --install-extension claude-project-hub-0.11.0.vsix
 Extensions view → `...` menu (top right) → **Install from VSIX…** → pick the file.
 
 Reload the window when prompted. The **Project Hub** icon appears in the activity bar.
+
+**Upgrading from "Project Hub for Claude Code" (`pecuniaestai.claude-project-hub`)**: the extension ID changed to `pecuniaestai.project-hub`, so VS Code treats it as a new extension. Install the new one, then uninstall the old one — Project Hub warns while both are installed. Your project list (`~/.project-hub/`) and avatars carry over, and the hub workspace offers a one-time migration. Per-project editor tabs, session names, and the PC/server list start fresh (the list refills as you open windows).
 
 > Upgrading: install the newer `.vsix` the same way — VS Code replaces the previous version in place. Your project list, colours, and briefing history live outside the extension (in `~/.project-hub/`), so they survive upgrades and reinstalls.
 
@@ -93,7 +97,7 @@ Agents are defined in the `projectHub.agents` setting. Built-in defaults:
 
 - Add any CLI by appending to the array — known ids auto-fill missing fields.
 - `projectHub.defaultAgent` controls auto-start on switch and the default terminal button.
-- Notifications are supported for all four out of the box. Custom agents can be wired manually by POSTing `{"cwd": "..."}` to `http://127.0.0.1:43917/hook/stop?agent=<id>`.
+- Notifications work out of the box for Claude, Codex, Gemini, and Antigravity. OpenCode (plugin-based, no hooks) and the plain Terminal entry have none. Custom agents can be wired manually by POSTing `{"cwd": "..."}` to `http://127.0.0.1:43917/hook/stop?agent=<id>`.
 
 ## Sessions after a VS Code restart
 
@@ -102,6 +106,24 @@ Terminal processes die on a full restart, but conversation history is preserved 
 - **⏱ Resume** restores the last conversation (`claude --continue`).
 - Right-click → **Open a Claude Session** lists saved sessions with previews. Each opens in its own terminal (`claude --resume <id>`), so several sessions can run in parallel.
 - **Automatic re-run**: VS Code restores agent terminals as plain shells. A few seconds after startup, Project Hub re-runs the agent in each of them — the last session for a default terminal, that session for a Claude session terminal. Only shells started fresh by this launch are touched; after a window reload, or in a terminal where you quit the agent yourself, nothing is sent. Turn off with `projectHub.resumeAgentsOnRestart`.
+
+## Remote (SSH)
+
+Under Remote-SSH the extension runs on the remote host, so agent terminals, the project list (`~/.project-hub/`) and notification hooks all live there. Install the VSIX once in the remote window (Extensions → `…` → *Install from VSIX…*) and put the agent CLIs on the remote `PATH`.
+
+A dropped connection keeps remote terminals alive only for a while; a remote server restart or update ends them. So in a remote window Project Hub always tries to keep agents running on its own:
+
+- **tmux installed**: each agent runs in `tmux new-session -A -s ph-<project>-<hash>-<agent>` (mouse scrolling on). On reconnect, Project Hub opens a terminal for each of its live tmux sessions and attaches — the agent never stopped.
+- **tmux missing**: agents run in plain terminals as before, with a one-time notice (*Don't Show Again* available). tmux is checked on every launch, so installing it later takes effect immediately.
+- Local windows are unaffected. Services, Background Processes, and restart revive are Windows-only and stay empty on a Linux remote.
+
+**One list across PCs and servers.** A VS Code window connects to one place only, so each PC and server keeps its own project list, and switching stays within that place. Every window also shares its list with the others:
+
+- The view title shows where this window is connected, e.g. `Local · TECH-DEV-1` or `SSH · dev-linux-01`.
+- Once another PC or server is known, the list becomes **device → projects**: this window's device comes first (expanded, marked *this window*), the others follow at the same level (`device-desktop` icon for a PC, `remote` icon for an SSH server). With a single device the projects are listed directly. A server shows up once you have opened a window on it with Project Hub installed.
+- Clicking a project in another group opens a window connected there and switches it to that project. If that window is already open, VS Code moves to it instead. It is always a separate window.
+- Right-click a group → **Hide This PC/Server from the List**; it reappears the next time a window opens there.
+- SSH groups reconnect as `user@<server IP>`. A non-standard port or key must be set in `~/.ssh/config` under that IP.
 
 ## Services & processes
 
@@ -179,13 +201,19 @@ Right-click a project row for per-project actions: resume, pick a session, open 
 - **No-reload switching**: replacing the whole folder (`openFolder`) reloads the window and kills every terminal. Project Hub instead swaps folders inside a hub workspace (`.code-workspace`) via `updateWorkspaceFolders`, so the Explorer switches while terminals and agent sessions stay alive.
 - **Anchor folder (`⌂ Hub`)**: VS Code restarts all extensions when the first workspace folder changes. A small pinned folder occupies that slot permanently; projects swap in the second slot only.
 - **Session isolation**: each agent runs in a dedicated terminal with the project as its working directory. The CLIs scope sessions by cwd, so projects never share a session.
-- **Notifications**: hooks are installed once, in user-global config — Claude `~/.claude/settings.json`, Codex `~/.codex/hooks.json`, Gemini `~/.gemini/settings.json`, Antigravity `~/.gemini/antigravity-cli/hooks.json`. On each event the hook POSTs to a local HTTP server; the payload's working directory identifies the project. Nothing is written into your repositories.
+- **Notifications**: hooks are installed once, in user-global config — Claude `~/.claude/settings.json`, Codex `~/.codex/hooks.json`, Gemini `~/.gemini/settings.json`, Antigravity `~/.gemini/antigravity-cli/hooks.json`. On each event the hook POSTs to a local HTTP server; the payload's working directory identifies the project. Nothing is written into your repositories. On Windows the command is `curl.exe … -d '@-'`, which means the same in Git Bash (Claude) and PowerShell (Gemini runs hooks with `powershell -Command`, where plain `curl` is an alias for `Invoke-WebRequest`).
 - **Where your data lives**: project list, briefing history, and saved restart commands are in `~/.project-hub/`. Token usage is read (never written) from the agent CLIs' own session files.
 
 ## Troubleshooting
 
 **No notifications arrive.**
 Run **Project Hub: Set Up Completion Notifications** to reinstall the hooks, then restart any running agent sessions — a session picks up hooks at start. If you changed `projectHub.port`, the hooks must be reinstalled to match.
+
+**Gemini never notifies on Windows (before 0.18.4).**
+Gemini runs hooks through PowerShell, and the old `curl … -d @-` command failed there. 0.18.4 switches to `curl.exe … -d '@-'` and reinstalls outdated hooks the next time you open the agent from Project Hub (or run **Set Up Completion Notifications**). Restart running Gemini sessions afterwards.
+
+**Clicking a *waiting* / *done* row opened the same session in a second terminal (before 0.18.4).**
+Switching to the project cleared those statuses before the row checked whether the session was alive, so it was resumed again with `--resume`. Fixed: liveness is checked before switching, and an existing terminal of that agent is shown instead. If two terminals still share one conversation, quit one of them with `/exit`.
 
 **"Port is already in use" warning.**
 Another window or program holds the port. The hub-workspace window owns it by preference and other windows hand it over automatically, so closing the other VS Code window usually resolves it. If a different program holds it, change `projectHub.port` and reinstall the hooks.
@@ -231,9 +259,11 @@ MIT
 
 # 한국어
 
-**VS Code 창 하나로 여러 프로젝트를.**
+**Project Hub — 여러 프로젝트와 에이전트를 한 작업 공간에서.**
 
-사이드바에서 창 리로드 없이 프로젝트를 전환하고, Claude / Gemini / Codex / Antigravity 세션을 프로젝트별로 격리해 실행합니다. 백그라운드 작업이 끝나면 알림이 오고, **프로젝트로 전환** 버튼 한 번으로 돌아갑니다.
+사이드바에서 창 리로드 없이 프로젝트를 전환하고, Claude / Codex / Gemini / Antigravity / OpenCode 세션을 프로젝트별로 격리해 실행합니다. 백그라운드 작업이 끝나면 알림이 오고, **프로젝트로 전환** 버튼 한 번으로 돌아갑니다. 다른 PC와 SSH 서버의 프로젝트도 같은 목록에 보입니다.
+
+*이전 이름은 "Project Hub for Claude Code"입니다. Claude Code 보조 도구로 시작해 여러 프로젝트·여러 에이전트 작업 공간으로 커졌습니다. 확장 ID는 그대로라 업데이트해도 데이터가 유지됩니다.*
 
 ## 이 확장이 해결하는 문제
 
@@ -271,7 +301,7 @@ Project Hub는 창을 **하나만** 씁니다. 허브 워크스페이스 안에�
 **명령줄**
 
 ```bash
-code --install-extension claude-project-hub-0.11.0.vsix
+code --install-extension project-hub-<version>.vsix
 ```
 
 **VS Code UI**
@@ -279,6 +309,8 @@ code --install-extension claude-project-hub-0.11.0.vsix
 확장 뷰 → 우측 상단 `...` → **VSIX에서 설치…** → 파일 선택
 
 안내가 뜨면 창을 다시 로드하세요. 액티비티 바에 **Project Hub** 아이콘이 생깁니다.
+
+**"Project Hub for Claude Code"(`pecuniaestai.claude-project-hub`)에서 업그레이드할 때**: 확장 ID가 `pecuniaestai.project-hub`로 바뀌어 VS Code는 새 확장으로 취급합니다. 새 버전을 설치한 뒤 이전 확장을 제거하세요. 둘 다 설치되어 있으면 Project Hub가 경고합니다. 프로젝트 목록(`~/.project-hub/`)과 아바타는 그대로 이어지고, 허브 워크스페이스는 한 번 이전 안내가 뜹니다. 프로젝트별 편집기 탭, 세션 이름, PC·서버 목록은 새로 시작합니다(PC·서버 목록은 창을 열 때마다 다시 채워집니다).
 
 > 업그레이드도 새 `.vsix`를 같은 방법으로 설치하면 이전 버전을 대체합니다. 프로젝트 목록·색상·브리핑 기록은 확장 바깥(`~/.project-hub/`)에 있어서 업그레이드나 재설치 후에도 유지됩니다.
 
@@ -307,7 +339,7 @@ code --install-extension claude-project-hub-0.11.0.vsix
 | OpenCode | `opencode` | `opencode --continue` | `opencode --session {sessionId}` |
 | Terminal | *(셸만 열기)* | — | — |
 
-배열에 항목을 추가하면 어떤 CLI든 등록할 수 있고, 알려진 id는 빠진 필드가 자동으로 채워집니다. Claude·Gemini·Codex·Antigravity는 알림을 지원하며, 직접 추가한 에이전트는 완료 시 `http://127.0.0.1:43917/hook/stop?agent=<id>`로 `{"cwd": "..."}`를 POST하도록 연결하면 됩니다.
+배열에 항목을 추가하면 어떤 CLI든 등록할 수 있고, 알려진 id는 빠진 필드가 자동으로 채워집니다. Claude·Gemini·Codex·Antigravity는 알림을 지원하고, OpenCode(hook이 아닌 플러그인 방식)와 Terminal 항목은 알림이 없습니다. 직접 추가한 에이전트는 완료 시 `http://127.0.0.1:43917/hook/stop?agent=<id>`로 `{"cwd": "..."}`를 POST하도록 연결하면 됩니다.
 
 ## 재시작 후 세션 복구
 
@@ -316,6 +348,24 @@ code --install-extension claude-project-hub-0.11.0.vsix
 - **⏱ 이어서 열기**로 마지막 대화를 복원합니다(`claude --continue`).
 - 우클릭 → **Claude 세션 골라서 열기**로 저장된 세션을 미리보기와 함께 고르면, 각각 별도 터미널에서 병행 복원됩니다.
 - **자동 재실행**: VS Code는 에이전트 터미널을 셸만 남은 채 복원합니다. 시작 몇 초 뒤 Project Hub가 각 터미널에서 에이전트를 다시 실행합니다 — 기본 터미널은 마지막 세션, Claude 세션 터미널은 그 세션. 이번 실행에서 새로 뜬 셸만 대상이며, 창 리로드 후나 직접 에이전트를 종료해 둔 터미널에는 아무것도 보내지 않습니다. `projectHub.resumeAgentsOnRestart`로 끌 수 있습니다.
+
+## 원격 (SSH)
+
+Remote-SSH에서는 확장이 원격 서버에서 실행되므로 에이전트 터미널, 프로젝트 목록(`~/.project-hub/`), 알림 hook이 모두 원격에 있습니다. 원격 창에서 VSIX를 한 번 설치하고(확장 → `…` → *Install from VSIX…*), 에이전트 CLI를 원격 `PATH`에 두세요.
+
+연결이 끊겨도 원격 터미널은 한동안만 유지되고, 원격 서버가 재시작·업데이트되면 종료됩니다. 그래서 원격 창에서는 Project Hub가 항상 에이전트를 계속 돌리도록 처리합니다.
+
+- **tmux 있음**: 에이전트를 `tmux new-session -A -s ph-<프로젝트>-<해시>-<에이전트>`로 실행합니다(마우스 스크롤 켜짐). 다시 연결하면 Project Hub가 살아 있는 자기 tmux 세션마다 터미널을 열어 붙습니다 — 에이전트는 멈춘 적이 없습니다.
+- **tmux 없음**: 전처럼 일반 터미널로 실행하고 안내를 한 번 띄웁니다(*다시 표시 안 함* 가능). 실행할 때마다 tmux를 확인하므로 나중에 설치하면 바로 적용됩니다.
+- 로컬 창에는 영향이 없습니다. 서비스, 백그라운드 프로세스, 재시작 후 자동 재실행은 Windows 전용이라 Linux 원격에서는 비어 있습니다.
+
+**여러 PC·서버를 한 목록에서.** VS Code 창 하나는 한 곳에만 연결되므로, PC·서버마다 프로젝트 목록이 따로 있고 전환도 그 안에서만 됩니다. 대신 모든 창이 자기 목록을 서로 공유합니다.
+
+- 목록 제목 옆에 이 창이 연결된 곳이 표시됩니다(예: `로컬 · TECH-DEV-1`, `SSH · dev-linux-01`).
+- 다른 PC·서버가 하나라도 있으면 목록이 **장비 → 프로젝트** 구조가 됩니다. 이 창의 장비가 맨 위(펼침, *현재 창* 표시)에, 다른 장비는 같은 계층에 이어집니다(PC는 모니터 아이콘, SSH 서버는 원격 아이콘). 장비가 하나뿐이면 프로젝트가 바로 나옵니다. 서버는 Project Hub가 설치된 창으로 한 번 접속하면 나타납니다.
+- 다른 그룹의 프로젝트를 누르면 그곳에 연결된 창을 열고 그 프로젝트로 전환합니다. 그 창이 이미 열려 있으면 새 창 대신 그 창으로 이동합니다. 항상 별도 창입니다.
+- 그룹을 우클릭 → **이 PC/서버를 목록에서 숨기기**. 그곳에서 창을 다시 열면 다시 나타납니다.
+- SSH 그룹은 `사용자@서버IP`로 다시 접속합니다. 22가 아닌 포트나 키는 `~/.ssh/config`에 그 IP 항목으로 설정하세요.
 
 ## 서비스·프로세스
 
@@ -393,13 +443,19 @@ VS Code는 터미널 탭 목록을 프로젝트별로 거르는 기능을 제공
 - **리로드 없는 전환**: `openFolder`로 폴더를 통째로 바꾸면 창이 리로드되고 터미널이 전부 죽습니다. 대신 허브 워크스페이스(`.code-workspace`) 안에서 `updateWorkspaceFolders`로 폴더만 교체하므로 Explorer는 바뀌고 세션은 살아남습니다.
 - **앵커 폴더(`⌂ Hub`)**: 첫 워크스페이스 폴더가 바뀌면 모든 확장이 재시작되므로, 작은 고정 폴더가 그 자리를 영구히 차지하고 프로젝트는 두 번째 자리에서만 교체됩니다.
 - **세션 격리**: 각 에이전트가 프로젝트를 작업 디렉터리로 하는 전용 터미널에서 실행됩니다. CLI들이 cwd로 세션을 구분하므로 프로젝트끼리 세션을 공유하지 않습니다.
-- **알림**: hook은 사용자 전역 설정에 한 번만 설치됩니다 — Claude `~/.claude/settings.json`, Codex `~/.codex/hooks.json`, Gemini `~/.gemini/settings.json`, Antigravity `~/.gemini/antigravity-cli/hooks.json`. 이벤트마다 로컬 HTTP 서버로 POST하고, 페이로드의 작업 디렉터리로 프로젝트를 식별합니다. **저장소 안에는 아무것도 쓰지 않습니다.**
+- **알림**: hook은 사용자 전역 설정에 한 번만 설치됩니다 — Claude `~/.claude/settings.json`, Codex `~/.codex/hooks.json`, Gemini `~/.gemini/settings.json`, Antigravity `~/.gemini/antigravity-cli/hooks.json`. 이벤트마다 로컬 HTTP 서버로 POST하고, 페이로드의 작업 디렉터리로 프로젝트를 식별합니다. **저장소 안에는 아무것도 쓰지 않습니다.** Windows에서는 명령이 `curl.exe … -d '@-'`인데, Git Bash(Claude)와 PowerShell 양쪽에서 같은 의미로 동작합니다(Gemini는 hook을 `powershell -Command`로 실행하며, 거기서 그냥 `curl`은 `Invoke-WebRequest`의 별칭입니다).
 - **데이터 위치**: 프로젝트 목록·브리핑 기록·저장된 재시작 명령은 `~/.project-hub/`에 있습니다. 토큰 사용량은 에이전트 CLI의 세션 파일에서 **읽기만** 합니다.
 
 ## 문제 해결
 
 **알림이 오지 않습니다.**
 **Project Hub: 완료 알림 설정**으로 hook을 다시 설치한 뒤, 실행 중이던 에이전트 세션을 재시작하세요. hook은 세션 시작 시점에 반영됩니다. `projectHub.port`를 바꿨다면 반드시 재설치해야 합니다.
+
+**Windows에서 Gemini 알림이 전혀 오지 않습니다 (0.18.4 이전).**
+Gemini는 hook을 PowerShell로 실행하는데, 예전 `curl … -d @-` 명령이 거기서 실패했습니다. 0.18.4부터 `curl.exe … -d '@-'`를 쓰며, Project Hub에서 에이전트를 다음에 열 때(또는 **완료 알림 설정** 실행 시) 옛 hook을 자동으로 다시 설치합니다. 이후 실행 중인 Gemini 세션을 재시작하세요.
+
+**응답 대기·완료 행을 누르면 같은 세션이 터미널에 하나 더 열립니다 (0.18.4 이전).**
+프로젝트로 전환하면서 그 상태가 먼저 지워져, 세션이 종료된 것으로 오판하고 `--resume`으로 다시 열었습니다. 이제 전환 전에 판단하고, 그 에이전트 터미널이 살아 있으면 그 터미널을 보여 줍니다. 이미 두 터미널이 한 대화를 쓰고 있다면 하나에서 `/exit`로 종료하세요.
 
 **"포트가 이미 사용 중" 경고가 뜹니다.**
 다른 창이나 프로그램이 포트를 쥐고 있습니다. 허브 워크스페이스 창이 우선 소유하고 창이 바뀌면 자동 인계되므로, 다른 VS Code 창을 닫으면 대개 해결됩니다. 다른 프로그램이 원인이면 `projectHub.port`를 바꾸고 hook을 재설치하세요.

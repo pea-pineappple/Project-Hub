@@ -1,8 +1,8 @@
 {
-  "name": "claude-project-hub",
-  "displayName": "Project Hub for Claude Code",
+  "name": "project-hub",
+  "displayName": "Project Hub — Multi-Project & Agent Workspace",
   "description": "%ext.description%",
-  "version": "0.15.6",
+  "version": "0.18.4",
   "l10n": "./l10n",
   "publisher": "PecuniaEstAI",
   "private": true,
@@ -102,6 +102,11 @@
         "command": "projectHub.removeProject",
         "title": "%cmd.removeProject%",
         "icon": "$(trash)"
+      },
+      {
+        "command": "projectHub.forgetHost",
+        "title": "%cmd.forgetHost%",
+        "icon": "$(close)"
       },
       {
         "command": "projectHub.openClaudeTerminal",
@@ -291,6 +296,11 @@
           "group": "9_remove@1"
         },
         {
+          "command": "projectHub.forgetHost",
+          "when": "view == projectHub.projects && viewItem == hostRow",
+          "group": "9_remove@1"
+        },
+        {
           "command": "projectHub.killProcess",
           "when": "view == projectHub.projects && viewItem == procRow",
           "group": "inline@1"
@@ -379,6 +389,10 @@
         }
       ],
       "commandPalette": [
+        {
+          "command": "projectHub.forgetHost",
+          "when": "false"
+        },
         {
           "command": "projectHub.removeProject",
           "when": "false"

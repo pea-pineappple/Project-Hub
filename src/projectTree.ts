@@ -10,6 +10,7 @@ import { BgProcess, getBackgroundProcesses } from './processTree';
 import { DirEntry, listDir } from './fileTree';
 import { ProjectUsage, formatCost, formatTokens, getProjectUsage } from './usage';
 import { sessionLabel } from './sessionLabels';
+import { HostEntry, currentHost, otherHosts } from './hostRegistry';
 
 export type HubNode =
     | { kind: 'project'; project: Project }
@@ -21,14 +22,22 @@ export type HubNode =
     | { kind: 'path'; project: Project }
     | { kind: 'files'; project: Project }
     | { kind: 'dir'; project: Project; path: string }
-    | { kind: 'file'; project: Project; path: string };
+    | { kind: 'file'; project: Project; path: string }
+    // 다른 PC·서버의 프로젝트 (누르면 그 호스트에 연결된 창을 연다)
+    // current: 이 창이 연결된 장비 — 자식이 실제 프로젝트 노드(전환 가능)
+    | { kind: 'host'; host: HostEntry; current?: boolean; project?: undefined }
+    | { kind: 'hostProject'; host: HostEntry; project: Project };
 
 /** 트리 컨텍스트 메뉴/명령 인자에서 Project 꺼내기 (루트/자식 노드 모두 지원) */
 export function asProject(arg?: Project | HubNode): Project | undefined {
     if (!arg) {
         return undefined;
     }
-    return 'kind' in arg ? arg.project : arg;
+    if (!('kind' in arg)) {
+        return arg;
+    }
+    // 다른 호스트의 프로젝트는 이 창에서 다룰 수 없다
+    return arg.kind === 'host' || arg.kind === 'hostProject' ? undefined : arg.project;
 }
 
 /** 하위 행 클릭이 프로젝트 전환도 하는 설정이면 툴팁에 안내를 덧붙인다 (서비스 뷰와 공용) */
@@ -58,6 +67,44 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<HubNode> {
     }
 
     getTreeItem(node: HubNode): vscode.TreeItem {
+        if (node.kind === 'host') {
+            const isSsh = node.host.kind === 'ssh';
+            const item = new vscode.TreeItem(
+                node.host.label,
+                node.current ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed
+            );
+            item.id = `${node.current ? 'hc' : 'h'}:${node.host.key}`;
+            item.iconPath = new vscode.ThemeIcon(isSsh ? 'remote' : 'device-desktop');
+            item.description =
+                `${isSsh ? 'SSH' : vscode.l10n.t('Local')} · ${node.host.projects.length}` +
+                (node.current ? ` · ${vscode.l10n.t('this window')}` : '');
+            // 현재 장비는 목록에서 숨길 수 없다
+            item.contextValue = node.current ? 'currentHostRow' : 'hostRow';
+            item.tooltip = isSsh
+                ? vscode.l10n.t('Projects on SSH server {0} ({1})', node.host.label, node.host.authority?.replace(/^ssh-remote\+/, '') ?? '')
+                : vscode.l10n.t('Projects on local PC {0}', node.host.label);
+            return item;
+        }
+
+        if (node.kind === 'hostProject') {
+            const item = new vscode.TreeItem(node.project.name, vscode.TreeItemCollapsibleState.None);
+            item.id = `hp:${node.host.key}:${node.project.path}`;
+            item.iconPath = new vscode.ThemeIcon('link-external');
+            item.contextValue = 'hostProjectRow';
+            item.tooltip =
+                `${node.project.path}\n\n` +
+                vscode.l10n.t(
+                    'Click: open in a window connected to {0} (switches to it if already open)',
+                    node.host.label
+                );
+            item.command = {
+                command: 'projectHub.openOnHost',
+                title: 'Open on Host',
+                arguments: [node.host, node.project]
+            };
+            return item;
+        }
+
         if (node.kind === 'agent') {
             // 같은 에이전트의 세션이 둘 이상이면 세션 ID 앞부분을 붙여 구분
             const siblings = this.manager
@@ -256,8 +303,13 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<HubNode> {
         );
         item.id = `p:${normalizePath(project.path)}:${shouldExpand ? 'e' : 'c'}`;
         item.contextValue = 'project';
-        // FileDecoration(활성 프로젝트 강조색)용 가상 URI
-        item.resourceUri = vscode.Uri.parse(`projecthub:/${encodeURIComponent(normalizePath(project.path))}`);
+        // FileDecoration(활성 프로젝트 강조색)용 가상 URI.
+        // Uri.parse는 %2F를 '/'로 되돌려 리눅스 경로(/home/…)가 "//home/…"이 되어 UriError가 나므로
+        // Uri.from으로 인코딩된 경로를 그대로 둔다 (읽는 쪽에서 decodeURIComponent)
+        item.resourceUri = vscode.Uri.from({
+            scheme: 'projecthub',
+            path: `/${encodeURIComponent(normalizePath(project.path))}`
+        });
         item.iconPath = this.avatars.avatar(project, status, active);
         item.command = {
             command: 'projectHub.switchProject',
@@ -280,10 +332,28 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<HubNode> {
         return item;
     }
 
+    /**
+     * 다른 장비가 있을 때만 현재 장비를 그룹으로 감싼다 (장비 → 프로젝트).
+     * 장비가 하나뿐이면 계층이 한 단계 늘기만 하므로 예전처럼 프로젝트를 바로 보여 준다.
+     */
+    private thisHostNode(): HubNode | undefined {
+        const host = currentHost();
+        if (!host || otherHosts().length === 0) {
+            return undefined;
+        }
+        return { kind: 'host', current: true, host: { ...host, projects: this.manager.getProjects(), updated: 0 } };
+    }
+
     /** treeView.reveal(전환 시 활성 항목 선택)에 필요 */
     getParent(node: HubNode): HubNode | undefined {
-        if (node.kind === 'project') {
+        if (node.kind === 'host') {
             return undefined;
+        }
+        if (node.kind === 'project') {
+            return this.thisHostNode();
+        }
+        if (node.kind === 'hostProject') {
+            return { kind: 'host', host: node.host };
         }
         if (node.kind === 'proc' || node.kind === 'procToggle') {
             return { kind: 'services', project: node.project };
@@ -298,8 +368,17 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<HubNode> {
     }
 
     async getChildren(node?: HubNode): Promise<HubNode[]> {
+        const ownProjects = () => this.manager.getProjects().map(project => ({ kind: 'project' as const, project }));
         if (!node) {
-            return this.manager.getProjects().map(project => ({ kind: 'project' as const, project }));
+            // 장비 → 프로젝트: 현재 장비(펼침)를 맨 위에, 다른 PC·서버를 그 아래 같은 계층에
+            const me = this.thisHostNode();
+            const others = otherHosts().map(host => ({ kind: 'host' as const, host }));
+            return me ? [me, ...others] : [...ownProjects(), ...others];
+        }
+        if (node.kind === 'host') {
+            return node.current
+                ? ownProjects()
+                : node.host.projects.map(project => ({ kind: 'hostProject' as const, host: node.host, project }));
         }
         if (node.kind === 'services') {
             const pids = await this.terminals.getManagedPids(node.project);
