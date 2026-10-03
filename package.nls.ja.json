@@ -12,6 +12,7 @@
   "cmd.quickSwitch": "Project Hub: プロジェクトをクイック切り替え",
   "cmd.removeProject": "リストから削除",
   "cmd.forgetHost": "この PC/サーバーを一覧から隠す",
+  "cmd.setupSshKey": "Project Hub: サーバーに SSH キーを設定 (パスワード入力の繰り返しをなくす)",
   "cmd.openTerminal": "AIターミナルを開く (既定のエージェント)",
   "cmd.resumeTerminal": "続きから開く (既定のエージェント、前回セッションを復元)",
   "cmd.pickSession": "Claudeセッションを選んで開く (マルチセッション)",

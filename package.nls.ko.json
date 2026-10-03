@@ -12,6 +12,7 @@
   "cmd.quickSwitch": "Project Hub: 프로젝트 빠른 전환",
   "cmd.removeProject": "리스트에서 제거",
   "cmd.forgetHost": "이 PC/서버를 목록에서 숨기기",
+  "cmd.setupSshKey": "Project Hub: 서버에 SSH 키 설정 (비밀번호 반복 입력 없애기)",
   "cmd.openTerminal": "AI 터미널 열기 (기본 에이전트)",
   "cmd.resumeTerminal": "이어서 열기 (기본 에이전트, 이전 세션 복원)",
   "cmd.pickSession": "Claude 세션 골라서 열기 (다중 세션)",

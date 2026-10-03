@@ -2,7 +2,7 @@
   "name": "project-hub",
   "displayName": "Project Hub — Multi-Project & Agent Workspace",
   "description": "%ext.description%",
-  "version": "0.18.4",
+  "version": "0.19.0",
   "l10n": "./l10n",
   "publisher": "PecuniaEstAI",
   "private": true,
@@ -107,6 +107,11 @@
         "command": "projectHub.forgetHost",
         "title": "%cmd.forgetHost%",
         "icon": "$(close)"
+      },
+      {
+        "command": "projectHub.setupSshKey",
+        "title": "%cmd.setupSshKey%",
+        "icon": "$(key)"
       },
       {
         "command": "projectHub.openClaudeTerminal",
@@ -299,6 +304,11 @@
           "command": "projectHub.forgetHost",
           "when": "view == projectHub.projects && viewItem == hostRow",
           "group": "9_remove@1"
+        },
+        {
+          "command": "projectHub.setupSshKey",
+          "when": "view == projectHub.projects && viewItem == hostRow && !remoteName",
+          "group": "1_ssh@1"
         },
         {
           "command": "projectHub.killProcess",

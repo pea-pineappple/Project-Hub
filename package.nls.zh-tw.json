@@ -12,6 +12,7 @@
   "cmd.quickSwitch": "Project Hub: 快速切換專案",
   "cmd.removeProject": "從清單中移除",
   "cmd.forgetHost": "從清單中隱藏此 PC/伺服器",
+  "cmd.setupSshKey": "Project Hub: 為伺服器設定 SSH 金鑰(不再重複輸入密碼)",
   "cmd.openTerminal": "開啟 AI 終端機（預設代理）",
   "cmd.resumeTerminal": "繼續上次工作階段（預設代理，還原上一工作階段）",
   "cmd.pickSession": "選擇 Claude 工作階段開啟（多工作階段）",
