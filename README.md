@@ -111,6 +111,13 @@ Terminal processes die on a full restart, but conversation history is preserved 
 
 Under Remote-SSH the extension runs on the remote host, so agent terminals, the project list (`~/.project-hub/`) and notification hooks all live there. Install the VSIX once in the remote window (Extensions → `…` → *Install from VSIX…*) and put the agent CLIs on the remote `PATH`.
 
+> **Set up an SSH key first.** With password login, Remote-SSH asks for the password **several times per connection** (host check, server install check, the connection itself), and again on every new window, reload, or reconnect — Project Hub opens a new window whenever you click a project on another device, so this adds up fast. Remote-SSH cannot store passwords.
+>
+> - **Automatic**: in a local window, run **Project Hub: Set Up SSH Key for a Server** (or right-click a server group in the list). It creates `~/.ssh/id_ed25519` if you have none, opens a terminal where you type the server password **once**, adds the public key to the server's `~/.ssh/authorized_keys`, and checks that key login works. Clicking a project on a server without key login offers this first.
+> - **Manual** (PowerShell): `ssh-keygen -t ed25519`, then
+>   `type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh user@server "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"`
+> - If key login still fails, the server may disallow it — ask its admin to check `PubkeyAuthentication yes` in `/etc/ssh/sshd_config`.
+
 A dropped connection keeps remote terminals alive only for a while; a remote server restart or update ends them. So in a remote window Project Hub always tries to keep agents running on its own:
 
 - **tmux installed**: each agent runs in `tmux new-session -A -s ph-<project>-<hash>-<agent>` (mouse scrolling on). On reconnect, Project Hub opens a terminal for each of its live tmux sessions and attaches — the agent never stopped.
@@ -168,6 +175,7 @@ Available from the Command Palette (`Ctrl+Shift+P`):
 | Project Hub: Add Current Folder as Project | Register the folder currently open |
 | Project Hub: Quick Switch Project | Fuzzy-pick a project (also on the status bar) |
 | Project Hub: Arrange Agent Terminals in Grid | 2-column editor grid |
+| Project Hub: Set Up SSH Key for a Server | Register an SSH key with one password entry (local window) |
 | Project Hub: Attach This Terminal to a Project | Adopt a terminal you opened yourself |
 | Project Hub: Set Up Completion Notifications | (Re)install the global hooks |
 | Project Hub: Refresh | Re-query processes, usage, and the tree |
@@ -353,6 +361,13 @@ code --install-extension project-hub-<version>.vsix
 
 Remote-SSH에서는 확장이 원격 서버에서 실행되므로 에이전트 터미널, 프로젝트 목록(`~/.project-hub/`), 알림 hook이 모두 원격에 있습니다. 원격 창에서 VSIX를 한 번 설치하고(확장 → `…` → *Install from VSIX…*), 에이전트 CLI를 원격 `PATH`에 두세요.
 
+> **SSH 키를 먼저 설정하세요.** 비밀번호 로그인이면 Remote-SSH는 **연결 한 번에 비밀번호를 여러 번**(서버 확인, 원격 서버 설치 확인, 실제 연결) 묻고, 새 창·새로고침·재연결 때마다 다시 묻습니다. Project Hub는 다른 장비의 프로젝트를 누르면 새 창을 열기 때문에 횟수가 금방 늘어납니다. Remote-SSH는 비밀번호를 저장하지 못합니다.
+>
+> - **자동**: 로컬 창에서 **Project Hub: 서버에 SSH 키 설정**을 실행하세요(목록의 서버 그룹 우클릭으로도 가능). 키(`~/.ssh/id_ed25519`)가 없으면 만들고, 터미널에서 서버 비밀번호를 **한 번만** 입력받아 서버의 `~/.ssh/authorized_keys`에 공개키를 등록한 뒤, 키 로그인이 되는지 확인합니다. 키 로그인이 안 되는 서버의 프로젝트를 누르면 이 설정을 먼저 권합니다.
+> - **수동** (PowerShell): `ssh-keygen -t ed25519` 후
+>   `type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh user@서버 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"`
+> - 그래도 키 로그인이 안 되면 서버가 막아 둔 것일 수 있습니다. 관리자에게 `/etc/ssh/sshd_config`의 `PubkeyAuthentication yes`를 확인해 달라고 하세요.
+
 연결이 끊겨도 원격 터미널은 한동안만 유지되고, 원격 서버가 재시작·업데이트되면 종료됩니다. 그래서 원격 창에서는 Project Hub가 항상 에이전트를 계속 돌리도록 처리합니다.
 
 - **tmux 있음**: 에이전트를 `tmux new-session -A -s ph-<프로젝트>-<해시>-<에이전트>`로 실행합니다(마우스 스크롤 켜짐). 다시 연결하면 Project Hub가 살아 있는 자기 tmux 세션마다 터미널을 열어 붙습니다 — 에이전트는 멈춘 적이 없습니다.
@@ -410,6 +425,7 @@ VS Code는 터미널 탭 목록을 프로젝트별로 거르는 기능을 제공
 | Project Hub: 현재 폴더를 프로젝트로 추가 | 지금 열려 있는 폴더를 등록 |
 | Project Hub: 프로젝트 빠른 전환 | 프로젝트 검색 전환 (상태 표시줄에서도 가능) |
 | Project Hub: 에이전트 터미널 그리드 배치 | 에디터 2열 그리드 |
+| Project Hub: 서버에 SSH 키 설정 | 비밀번호 1회 입력으로 SSH 키 등록 (로컬 창) |
 | Project Hub: 이 터미널을 프로젝트에 연결 | 직접 연 터미널 편입 |
 | Project Hub: 완료 알림 설정 | 전역 hook 재설치 |
 | Project Hub: 새로 고침 | 프로세스·사용량·트리 재조회 |

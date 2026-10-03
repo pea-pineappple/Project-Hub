@@ -12,6 +12,7 @@
   "cmd.quickSwitch": "Project Hub: Quick Switch Project",
   "cmd.removeProject": "Remove from List",
   "cmd.forgetHost": "Hide This PC/Server from the List",
+  "cmd.setupSshKey": "Project Hub: Set Up SSH Key for a Server (no more password prompts)",
   "cmd.openTerminal": "Open AI Terminal (Default Agent)",
   "cmd.resumeTerminal": "Resume (Default Agent, Restore Last Session)",
   "cmd.pickSession": "Open a Claude Session (Multi-Session)",

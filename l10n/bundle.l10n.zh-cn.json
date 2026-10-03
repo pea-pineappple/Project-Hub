@@ -129,5 +129,17 @@
   "Click: open in a window connected to {0} (switches to it if already open)": "单击：在连接到 {0} 的窗口中打开(如已打开则切换到该窗口)",
   "Show Extension": "显示扩展",
   "The old \"Project Hub for Claude Code\" ({0}) is still installed. It conflicts with this version (same sidebar, commands and notification port). Please uninstall it.": "旧版“Project Hub for Claude Code”({0})仍已安装。它与此版本冲突(侧边栏、命令和通知端口相同)，请将其卸载。",
-  "this window": "当前窗口"
+  "this window": "当前窗口",
+  "Run this from a local (non-remote) window — SSH keys are set up from your PC to the server.": "请在本地(非远程)窗口中运行。SSH 密钥是从此 PC 设置到服务器的。",
+  "Enter user@host…": "输入 user@host…",
+  "Server to set up an SSH key for (from ~/.ssh/config)": "要设置 SSH 密钥的服务器(来自 ~/.ssh/config)",
+  "Server to connect to": "要连接的服务器",
+  "Could not create an SSH key: {0}": "无法创建 SSH 密钥：{0}",
+  "Enter the server password once. Your public key ({0}) will be added to ~/.ssh/authorized_keys on {1}.": "请输入一次服务器密码。您的公钥({0})将被添加到 {1} 的 ~/.ssh/authorized_keys。",
+  "SSH key is set up for {0}. Remote-SSH will no longer ask for a password.": "已为 {0} 设置 SSH 密钥。Remote-SSH 将不再询问密码。",
+  "Key login to {0} still fails. The server may not allow public-key login — check PubkeyAuthentication in /etc/ssh/sshd_config.": "仍无法使用密钥登录 {0}。服务器可能不允许公钥登录，请检查 /etc/ssh/sshd_config 中的 PubkeyAuthentication。",
+  "Set Up SSH Key": "设置 SSH 密钥",
+  "Open Anyway": "仍然打开",
+  "Don't Ask for This Server": "此服务器不再询问",
+  "{0} has no SSH key login, so Remote-SSH will ask for the password several times on every connection. Set up a key now? (password once)": "{0} 未设置 SSH 密钥登录，Remote-SSH 每次连接都会多次询问密码。现在设置密钥吗？(只需输入一次密码)"
 }

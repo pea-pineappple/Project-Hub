@@ -11,6 +11,7 @@ import { ProjectTreeProvider } from './projectTree';
 import { TerminalManager, sendWhenReady } from './terminalManager';
 import { initRemotePersist, liveTmuxSessions } from './remotePersist';
 import { migrateFromOldId } from './legacyId';
+import { initSshKeySetup, offerKeySetupBeforeOpen, setupSshKey } from './sshKeySetup';
 import { HostEntry, currentHost, forgetHost, initHostRegistry, openOnHost, publishHost, takePendingSwitch } from './hostRegistry';
 import { NotificationServer, HookEvent, HookPayload } from './notificationServer';
 import { installAgentHooks, hasAgentHooks, supportsHooks } from './hookInstaller';
@@ -40,6 +41,7 @@ export function activate(context: vscode.ExtensionContext): void {
     initRemotePersist(context);
     initHostRegistry(context);
     migrateFromOldId(context);
+    initSshKeySetup(context);
     const manager = new ProjectManager(context);
     // 에이전트 터미널이 닫히면 (Stop hook이 못 오므로) '작업 중' 표시를 정리
     const terminals = new TerminalManager(context, (agentId, projectPath, sessionId) => {
@@ -792,8 +794,21 @@ export function activate(context: vscode.ExtensionContext): void {
             }
         }),
 
-        vscode.commands.registerCommand('projectHub.openOnHost', (host: HostEntry, project: Project) =>
-            openOnHost(host, project)
+        vscode.commands.registerCommand('projectHub.openOnHost', async (host: HostEntry, project: Project) => {
+            // 키 인증이 안 되는 SSH 서버면 창을 열기 전에 키 설정을 권한다 (비밀번호 반복 입력 방지)
+            if (host.kind === 'ssh' && host.authority) {
+                const target = host.authority.replace(/^ssh-remote\+/, '');
+                if (!(await offerKeySetupBeforeOpen(target))) {
+                    return;
+                }
+            }
+            await openOnHost(host, project);
+        }),
+
+        vscode.commands.registerCommand('projectHub.setupSshKey', (node?: HubNode) =>
+            setupSshKey(
+                node?.kind === 'host' && node.host.authority ? node.host.authority.replace(/^ssh-remote\+/, '') : undefined
+            )
         ),
 
         vscode.commands.registerCommand('projectHub.forgetHost', async (node?: HubNode) => {

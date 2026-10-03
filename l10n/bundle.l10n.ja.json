@@ -129,5 +129,17 @@
   "Click: open in a window connected to {0} (switches to it if already open)": "クリック: {0} に接続したウィンドウで開く(既に開いていればそのウィンドウへ移動)",
   "Show Extension": "拡張機能を表示",
   "The old \"Project Hub for Claude Code\" ({0}) is still installed. It conflicts with this version (same sidebar, commands and notification port). Please uninstall it.": "旧「Project Hub for Claude Code」({0})がまだインストールされています。サイドバー・コマンド・通知ポートが重複してこのバージョンと競合するため、アンインストールしてください。",
-  "this window": "このウィンドウ"
+  "this window": "このウィンドウ",
+  "Run this from a local (non-remote) window — SSH keys are set up from your PC to the server.": "ローカル(リモートでない)ウィンドウで実行してください。SSH キーはこの PC からサーバーに設定します。",
+  "Enter user@host…": "user@host を入力…",
+  "Server to set up an SSH key for (from ~/.ssh/config)": "SSH キーを設定するサーバー (~/.ssh/config より)",
+  "Server to connect to": "接続するサーバー",
+  "Could not create an SSH key: {0}": "SSH キーを作成できませんでした: {0}",
+  "Enter the server password once. Your public key ({0}) will be added to ~/.ssh/authorized_keys on {1}.": "サーバーのパスワードを一度入力してください。公開鍵({0})が {1} の ~/.ssh/authorized_keys に追加されます。",
+  "SSH key is set up for {0}. Remote-SSH will no longer ask for a password.": "{0} に SSH キーを設定しました。Remote-SSH はもうパスワードを求めません。",
+  "Key login to {0} still fails. The server may not allow public-key login — check PubkeyAuthentication in /etc/ssh/sshd_config.": "{0} へのキーログインがまだ失敗します。サーバーが公開鍵ログインを許可していない可能性があります。/etc/ssh/sshd_config の PubkeyAuthentication を確認してください。",
+  "Set Up SSH Key": "SSH キーを設定",
+  "Open Anyway": "このまま開く",
+  "Don't Ask for This Server": "このサーバーでは今後確認しない",
+  "{0} has no SSH key login, so Remote-SSH will ask for the password several times on every connection. Set up a key now? (password once)": "{0} には SSH キーログインが設定されていないため、Remote-SSH は接続のたびにパスワードを何度も求めます。今キーを設定しますか？(パスワード入力は 1 回)"
 }

@@ -129,5 +129,17 @@
   "Click: open in a window connected to {0} (switches to it if already open)": "클릭: {0}에 연결된 창에서 열기 (이미 열려 있으면 그 창으로 이동)",
   "Show Extension": "확장 보기",
   "The old \"Project Hub for Claude Code\" ({0}) is still installed. It conflicts with this version (same sidebar, commands and notification port). Please uninstall it.": "이전 \"Project Hub for Claude Code\"({0})가 아직 설치되어 있습니다. 사이드바·명령·알림 포트가 겹쳐 이 버전과 충돌하니 제거해 주세요.",
-  "this window": "현재 창"
+  "this window": "현재 창",
+  "Run this from a local (non-remote) window — SSH keys are set up from your PC to the server.": "로컬(원격이 아닌) 창에서 실행하세요. SSH 키는 이 PC에서 서버로 설정합니다.",
+  "Enter user@host…": "user@host 직접 입력…",
+  "Server to set up an SSH key for (from ~/.ssh/config)": "SSH 키를 설정할 서버 (~/.ssh/config 기준)",
+  "Server to connect to": "접속할 서버",
+  "Could not create an SSH key: {0}": "SSH 키를 만들지 못했습니다: {0}",
+  "Enter the server password once. Your public key ({0}) will be added to ~/.ssh/authorized_keys on {1}.": "서버 비밀번호를 한 번 입력하세요. 공개키({0})가 {1}의 ~/.ssh/authorized_keys에 추가됩니다.",
+  "SSH key is set up for {0}. Remote-SSH will no longer ask for a password.": "{0}에 SSH 키를 설정했습니다. 이제 Remote-SSH가 비밀번호를 묻지 않습니다.",
+  "Key login to {0} still fails. The server may not allow public-key login — check PubkeyAuthentication in /etc/ssh/sshd_config.": "{0}에 키로 로그인되지 않습니다. 서버가 공개키 로그인을 허용하지 않을 수 있습니다. /etc/ssh/sshd_config의 PubkeyAuthentication을 확인하세요.",
+  "Set Up SSH Key": "SSH 키 설정",
+  "Open Anyway": "그냥 열기",
+  "Don't Ask for This Server": "이 서버는 다시 묻지 않기",
+  "{0} has no SSH key login, so Remote-SSH will ask for the password several times on every connection. Set up a key now? (password once)": "{0}에는 SSH 키 로그인이 설정되어 있지 않아, Remote-SSH가 연결할 때마다 비밀번호를 여러 번 묻습니다. 지금 키를 설정할까요? (비밀번호 1회 입력)"
 }
