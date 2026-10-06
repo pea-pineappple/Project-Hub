@@ -4,7 +4,7 @@
 
 Switch projects from a sidebar list without reloading the window — terminals and your Claude / Codex / Gemini / Antigravity / OpenCode sessions keep running in the background, and a notification (with a one-click **Switch to Project** button) tells you when an agent finishes or needs your input. Projects on your other PCs and SSH servers show up in the same list.
 
-*Formerly "Project Hub for Claude Code" — it started as a Claude Code helper and grew into a multi-project, multi-agent workspace. The extension ID is unchanged, so updates keep your data.*
+*Formerly "Project Hub for Claude Code" — it started as a Claude Code helper and grew into a multi-project, multi-agent workspace. Data from earlier versions carries over automatically.*
 
 *UI languages: English · 한국어 · 日本語 · 简体中文 · 繁體中文 (follows the VS Code display language).*
 *[한국어 문서는 아래에 있습니다 →](#한국어)*
@@ -66,7 +66,7 @@ Extensions view → `...` menu (top right) → **Install from VSIX…** → pick
 
 Reload the window when prompted. The **Project Hub** icon appears in the activity bar.
 
-**Upgrading from "Project Hub for Claude Code" (`pecuniaestai.claude-project-hub`)**: the extension ID changed to `pecuniaestai.project-hub`, so VS Code treats it as a new extension. Install the new one, then uninstall the old one — Project Hub warns while both are installed. Your project list (`~/.project-hub/`) and avatars carry over, and the hub workspace offers a one-time migration. Per-project editor tabs, session names, and the PC/server list start fresh (the list refills as you open windows).
+**Upgrading from "Project Hub for Claude Code" (`pecuniaestai.claude-project-hub`)**: the extension ID changed to `pecuniaestai.projecthub`, so VS Code treats it as a new extension. Install the new one, then uninstall the old one — Project Hub warns while both are installed. Your project list (`~/.project-hub/`) and avatars carry over, and the hub workspace offers a one-time migration. Per-project editor tabs, session names, and the PC/server list start fresh (the list refills as you open windows).
 
 > Upgrading: install the newer `.vsix` the same way — VS Code replaces the previous version in place. Your project list, colours, and briefing history live outside the extension (in `~/.project-hub/`), so they survive upgrades and reinstalls.
 
@@ -318,7 +318,7 @@ code --install-extension project-hub-<version>.vsix
 
 안내가 뜨면 창을 다시 로드하세요. 액티비티 바에 **Project Hub** 아이콘이 생깁니다.
 
-**"Project Hub for Claude Code"(`pecuniaestai.claude-project-hub`)에서 업그레이드할 때**: 확장 ID가 `pecuniaestai.project-hub`로 바뀌어 VS Code는 새 확장으로 취급합니다. 새 버전을 설치한 뒤 이전 확장을 제거하세요. 둘 다 설치되어 있으면 Project Hub가 경고합니다. 프로젝트 목록(`~/.project-hub/`)과 아바타는 그대로 이어지고, 허브 워크스페이스는 한 번 이전 안내가 뜹니다. 프로젝트별 편집기 탭, 세션 이름, PC·서버 목록은 새로 시작합니다(PC·서버 목록은 창을 열 때마다 다시 채워집니다).
+**"Project Hub for Claude Code"(`pecuniaestai.claude-project-hub`)에서 업그레이드할 때**: 확장 ID가 `pecuniaestai.projecthub`로 바뀌어 VS Code는 새 확장으로 취급합니다. 새 버전을 설치한 뒤 이전 확장을 제거하세요. 둘 다 설치되어 있으면 Project Hub가 경고합니다. 프로젝트 목록(`~/.project-hub/`)과 아바타는 그대로 이어지고, 허브 워크스페이스는 한 번 이전 안내가 뜹니다. 프로젝트별 편집기 탭, 세션 이름, PC·서버 목록은 새로 시작합니다(PC·서버 목록은 창을 열 때마다 다시 채워집니다).
 
 > 업그레이드도 새 `.vsix`를 같은 방법으로 설치하면 이전 버전을 대체합니다. 프로젝트 목록·색상·브리핑 기록은 확장 바깥(`~/.project-hub/`)에 있어서 업그레이드나 재설치 후에도 유지됩니다.
 
