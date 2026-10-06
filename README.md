@@ -69,7 +69,7 @@ Reload the window when prompted. The **Project Hub** icon appears in the activit
 
 **Upgrading from "Project Hub for Claude Code" (`pecuniaestai.claude-project-hub`)**: the extension ID changed to `pecuniaestai.projecthub`, so VS Code treats it as a new extension. Install the new one, then uninstall the old one — Project Hub warns while both are installed. Your project list (`~/.project-hub/`) and avatars carry over, and the hub workspace offers a one-time migration. Per-project editor tabs, session names, and the PC/server list start fresh (the list refills as you open windows).
 
-> Upgrading: install the newer `.vsix` the same way — VS Code replaces the previous version in place. Your project list, colours, and briefing history live outside the extension (in `~/.project-hub/`), so they survive upgrades and reinstalls.
+> Upgrading: update from the Marketplace (Extensions view → filter **Installed** → **Update**), or install the newer `.vsix` the same way — VS Code replaces the previous version in place. Your project list, colours, and briefing history live outside the extension (in `~/.project-hub/`), so they survive upgrades and reinstalls.
 
 ## Getting started
 
@@ -110,7 +110,7 @@ Terminal processes die on a full restart, but conversation history is preserved 
 
 ## Remote (SSH)
 
-Under Remote-SSH the extension runs on the remote host, so agent terminals, the project list (`~/.project-hub/`) and notification hooks all live there. Install the VSIX once in the remote window (Extensions → `…` → *Install from VSIX…*) and put the agent CLIs on the remote `PATH`.
+Under Remote-SSH the extension runs on the remote host, so agent terminals, the project list (`~/.project-hub/`) and notification hooks all live there. Install the extension in the remote window — from the Marketplace (Extensions view → search **Project Hub** → **Install in SSH: …**), or from a VSIX if the remote has no network access — and put the agent CLIs on the remote `PATH`.
 
 > **Set up an SSH key first.** With password login, Remote-SSH asks for the password **several times per connection** (host check, server install check, the connection itself), and again on every new window, reload, or reconnect — Project Hub opens a new window whenever you click a project on another device, so this adds up fast. Remote-SSH cannot store passwords.
 >
@@ -272,7 +272,7 @@ MIT
 
 사이드바에서 창 리로드 없이 프로젝트를 전환하고, Claude / Codex / Gemini / Antigravity / OpenCode 세션을 프로젝트별로 격리해 실행합니다. 백그라운드 작업이 끝나면 알림이 오고, **프로젝트로 전환** 버튼 한 번으로 돌아갑니다. 다른 PC와 SSH 서버의 프로젝트도 같은 목록에 보입니다.
 
-*이전 이름은 "Project Hub for Claude Code"입니다. Claude Code 보조 도구로 시작해 여러 프로젝트·여러 에이전트 작업 공간으로 커졌습니다. 확장 ID는 그대로라 업데이트해도 데이터가 유지됩니다.*
+*이전 이름은 "Project Hub for Claude Code"입니다. Claude Code 보조 도구로 시작해 여러 프로젝트·여러 에이전트 작업 공간으로 커졌습니다. 이전 버전의 데이터는 자동으로 이어집니다.*
 
 ## 이 확장이 해결하는 문제
 
@@ -322,7 +322,7 @@ code --install-extension projecthub-<version>.vsix
 
 **"Project Hub for Claude Code"(`pecuniaestai.claude-project-hub`)에서 업그레이드할 때**: 확장 ID가 `pecuniaestai.projecthub`로 바뀌어 VS Code는 새 확장으로 취급합니다. 새 버전을 설치한 뒤 이전 확장을 제거하세요. 둘 다 설치되어 있으면 Project Hub가 경고합니다. 프로젝트 목록(`~/.project-hub/`)과 아바타는 그대로 이어지고, 허브 워크스페이스는 한 번 이전 안내가 뜹니다. 프로젝트별 편집기 탭, 세션 이름, PC·서버 목록은 새로 시작합니다(PC·서버 목록은 창을 열 때마다 다시 채워집니다).
 
-> 업그레이드도 새 `.vsix`를 같은 방법으로 설치하면 이전 버전을 대체합니다. 프로젝트 목록·색상·브리핑 기록은 확장 바깥(`~/.project-hub/`)에 있어서 업그레이드나 재설치 후에도 유지됩니다.
+> 업그레이드는 마켓플레이스에서(확장 뷰 → **설치됨** 필터 → **업데이트**) 하거나, 새 `.vsix`를 같은 방법으로 설치하면 이전 버전을 대체합니다. 프로젝트 목록·색상·브리핑 기록은 확장 바깥(`~/.project-hub/`)에 있어서 업그레이드나 재설치 후에도 유지됩니다.
 
 ## 시작하기
 
@@ -361,7 +361,7 @@ code --install-extension projecthub-<version>.vsix
 
 ## 원격 (SSH)
 
-Remote-SSH에서는 확장이 원격 서버에서 실행되므로 에이전트 터미널, 프로젝트 목록(`~/.project-hub/`), 알림 hook이 모두 원격에 있습니다. 원격 창에서 VSIX를 한 번 설치하고(확장 → `…` → *Install from VSIX…*), 에이전트 CLI를 원격 `PATH`에 두세요.
+Remote-SSH에서는 확장이 원격 서버에서 실행되므로 에이전트 터미널, 프로젝트 목록(`~/.project-hub/`), 알림 hook이 모두 원격에 있습니다. 원격 창에 확장을 설치하세요 — 마켓플레이스에서(확장 뷰 → **Project Hub** 검색 → **SSH: …에 설치**) 하거나, 원격이 네트워크에서 격리돼 있으면 VSIX로 — 그리고 에이전트 CLI를 원격 `PATH`에 두세요.
 
 > **SSH 키를 먼저 설정하세요.** 비밀번호 로그인이면 Remote-SSH는 **연결 한 번에 비밀번호를 여러 번**(서버 확인, 원격 서버 설치 확인, 실제 연결) 묻고, 새 창·새로고침·재연결 때마다 다시 묻습니다. Project Hub는 다른 장비의 프로젝트를 누르면 새 창을 열기 때문에 횟수가 금방 늘어납니다. Remote-SSH는 비밀번호를 저장하지 못합니다.
 >
