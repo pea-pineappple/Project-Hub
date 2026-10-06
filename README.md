@@ -52,17 +52,18 @@ Project Hub keeps **one** window. Projects swap inside a hub workspace, so the E
 
 ## Install
 
-This extension is distributed as a `.vsix` file.
+**From the VS Code Marketplace (recommended)**
 
-**From the command line**
+1. In VS Code, open the Extensions view (`Ctrl+Shift+X` / `Cmd+Shift+X`).
+2. Search for **Project Hub** and click **Install** — or open it directly: [PecuniaEstAI.projecthub](https://marketplace.visualstudio.com/items?itemName=PecuniaEstAI.projecthub).
+
+**Offline / manual install (.vsix)**
 
 ```bash
-code --install-extension project-hub-<version>.vsix
+code --install-extension projecthub-<version>.vsix
 ```
 
-**From the VS Code UI**
-
-Extensions view → `...` menu (top right) → **Install from VSIX…** → pick the file.
+Or: Extensions view → `...` menu (top right) → **Install from VSIX…** → pick the file.
 
 Reload the window when prompted. The **Project Hub** icon appears in the activity bar.
 
@@ -304,17 +305,18 @@ Project Hub는 창을 **하나만** 씁니다. 허브 워크스페이스 안에�
 
 ## 설치
 
-`.vsix` 파일로 배포됩니다.
+**VS Code 마켓플레이스에서 (권장)**
 
-**명령줄**
+1. VS Code에서 확장 뷰를 엽니다 (`Ctrl+Shift+X` / `Cmd+Shift+X`).
+2. **Project Hub**를 검색해서 **설치**를 누르거나, 바로가기: [PecuniaEstAI.projecthub](https://marketplace.visualstudio.com/items?itemName=PecuniaEstAI.projecthub)
+
+**오프라인/수동 설치 (.vsix)**
 
 ```bash
-code --install-extension project-hub-<version>.vsix
+code --install-extension projecthub-<version>.vsix
 ```
 
-**VS Code UI**
-
-확장 뷰 → 우측 상단 `...` → **VSIX에서 설치…** → 파일 선택
+또는: 확장 뷰 → 우측 상단 `...` → **VSIX에서 설치…** → 파일 선택
 
 안내가 뜨면 창을 다시 로드하세요. 액티비티 바에 **Project Hub** 아이콘이 생깁니다.
 
