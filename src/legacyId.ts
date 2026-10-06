@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 /**
- * 확장 ID 변경(pecuniaestai.claude-project-hub → pecuniaestai.project-hub) 대응.
+ * 확장 ID 변경(pecuniaestai.claude-project-hub → pecuniaestai.projecthub) 대응.
  *
  * ID가 바뀌면 VS Code는 다른 확장으로 취급해 globalState와 globalStorage 폴더가 새로 시작된다.
  * - 프로젝트 목록은 ~/.project-hub/에 있어 영향 없음
