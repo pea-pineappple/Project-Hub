@@ -1,0 +1,667 @@
+{
+  "name": "projecthub",
+  "displayName": "Project Hub — Multi-Project & Agent Workspace",
+  "description": "%ext.description%",
+  "version": "0.19.2",
+  "l10n": "./l10n",
+  "publisher": "PecuniaEstAI",
+  "private": true,
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#1b2431",
+    "theme": "dark"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "gemini",
+    "codex",
+    "ai-agent",
+    "multi-project",
+    "workspace",
+    "project-manager",
+    "session"
+  ],
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "AI",
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "projectHub",
+          "title": "Project Hub",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "projectHub": [
+        {
+          "id": "projectHub.projects",
+          "name": "%view.projects%",
+          "icon": "media/icon.svg"
+        },
+        {
+          "id": "projectHub.services",
+          "name": "%view.services%",
+          "icon": "media/icon.svg"
+        },
+        {
+          "id": "projectHub.briefing",
+          "name": "%view.briefing%",
+          "type": "webview",
+          "icon": "media/icon.svg",
+          "visibility": "collapsed"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "projectHub.projects",
+        "contents": "%welcome.projects%"
+      },
+      {
+        "view": "projectHub.services",
+        "contents": "%welcome.services%"
+      }
+    ],
+    "commands": [
+      {
+        "command": "projectHub.addProject",
+        "title": "%cmd.addProject%",
+        "icon": "$(add)"
+      },
+      {
+        "command": "projectHub.addCurrentFolder",
+        "title": "%cmd.addCurrentFolder%"
+      },
+      {
+        "command": "projectHub.createProject",
+        "title": "%cmd.createProject%",
+        "icon": "$(new-folder)"
+      },
+      {
+        "command": "projectHub.switchProject",
+        "title": "%cmd.switchProject%"
+      },
+      {
+        "command": "projectHub.quickSwitch",
+        "title": "%cmd.quickSwitch%"
+      },
+      {
+        "command": "projectHub.removeProject",
+        "title": "%cmd.removeProject%",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "projectHub.forgetHost",
+        "title": "%cmd.forgetHost%",
+        "icon": "$(close)"
+      },
+      {
+        "command": "projectHub.setupSshKey",
+        "title": "%cmd.setupSshKey%",
+        "icon": "$(key)"
+      },
+      {
+        "command": "projectHub.openClaudeTerminal",
+        "title": "%cmd.openTerminal%",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "projectHub.resumeClaudeTerminal",
+        "title": "%cmd.resumeTerminal%",
+        "icon": "$(history)"
+      },
+      {
+        "command": "projectHub.pickSession",
+        "title": "%cmd.pickSession%",
+        "icon": "$(list-unordered)"
+      },
+      {
+        "command": "projectHub.openAgentTerminal",
+        "title": "%cmd.openAgentTerminal%",
+        "icon": "$(robot)"
+      },
+      {
+        "command": "projectHub.setupNotifications",
+        "title": "%cmd.setupNotifications%",
+        "icon": "$(bell)"
+      },
+      {
+        "command": "projectHub.setProjectColor",
+        "title": "%cmd.setProjectColor%",
+        "icon": "$(symbol-color)"
+      },
+      {
+        "command": "projectHub.killProcess",
+        "title": "%cmd.killProcess%",
+        "icon": "$(stop-circle)"
+      },
+      {
+        "command": "projectHub.toggleProcessFilter",
+        "title": "%cmd.toggleProcessFilter%",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "projectHub.killService",
+        "title": "%cmd.killService%",
+        "icon": "$(stop-circle)"
+      },
+      {
+        "command": "projectHub.restartService",
+        "title": "%cmd.restartService%",
+        "icon": "$(debug-restart)"
+      },
+      {
+        "command": "projectHub.killProjectServices",
+        "title": "%cmd.killProjectServices%",
+        "icon": "$(stop-circle)"
+      },
+      {
+        "command": "projectHub.sendInstruction",
+        "title": "%cmd.sendInstruction%",
+        "icon": "$(comment)"
+      },
+      {
+        "command": "projectHub.arrangeTerminalGrid",
+        "title": "%cmd.arrangeGrid%",
+        "icon": "$(split-horizontal)"
+      },
+      {
+        "command": "projectHub.adoptTerminal",
+        "title": "%cmd.adoptTerminal%",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "projectHub.openBriefing",
+        "title": "%cmd.openBriefing%",
+        "icon": "$(arrow-right)"
+      },
+      {
+        "command": "projectHub.clearBriefing",
+        "title": "%cmd.clearBriefing%",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "projectHub.revealServiceTerminal",
+        "title": "%cmd.revealServiceTerminal%"
+      },
+      {
+        "command": "projectHub.openServiceInBrowser",
+        "title": "%cmd.openInBrowser%",
+        "icon": "$(globe)"
+      },
+      {
+        "command": "projectHub.revealFileNodeInOS",
+        "title": "%cmd.revealInOS%"
+      },
+      {
+        "command": "projectHub.copyFilePath",
+        "title": "%cmd.copyFilePath%"
+      },
+      {
+        "command": "projectHub.refresh",
+        "title": "%cmd.refresh%",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "projectHub.addProject",
+          "when": "view == projectHub.projects",
+          "group": "navigation@1"
+        },
+        {
+          "command": "projectHub.createProject",
+          "when": "view == projectHub.projects",
+          "group": "navigation@2"
+        },
+        {
+          "command": "projectHub.arrangeTerminalGrid",
+          "when": "view == projectHub.projects",
+          "group": "navigation@3"
+        },
+        {
+          "command": "projectHub.refresh",
+          "when": "view == projectHub.projects",
+          "group": "navigation@4"
+        },
+        {
+          "command": "projectHub.refresh",
+          "when": "view == projectHub.services",
+          "group": "navigation@1"
+        },
+        {
+          "command": "projectHub.clearBriefing",
+          "when": "view == projectHub.briefing",
+          "group": "navigation@1"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "projectHub.openClaudeTerminal",
+          "when": "view == projectHub.projects && viewItem == project",
+          "group": "inline@1"
+        },
+        {
+          "command": "projectHub.resumeClaudeTerminal",
+          "when": "view == projectHub.projects && viewItem == project",
+          "group": "inline@2"
+        },
+        {
+          "command": "projectHub.resumeClaudeTerminal",
+          "when": "view == projectHub.projects && viewItem == project",
+          "group": "1_actions@0"
+        },
+        {
+          "command": "projectHub.pickSession",
+          "when": "view == projectHub.projects && viewItem == project",
+          "group": "1_actions@1"
+        },
+        {
+          "command": "projectHub.openAgentTerminal",
+          "when": "view == projectHub.projects && viewItem == project",
+          "group": "inline@3"
+        },
+        {
+          "command": "projectHub.removeProject",
+          "when": "view == projectHub.projects && viewItem == project",
+          "group": "inline@4"
+        },
+        {
+          "command": "projectHub.openAgentTerminal",
+          "when": "view == projectHub.projects && viewItem == project",
+          "group": "1_actions@3"
+        },
+        {
+          "command": "projectHub.setupNotifications",
+          "when": "view == projectHub.projects && viewItem == project",
+          "group": "1_actions@2"
+        },
+        {
+          "command": "projectHub.setProjectColor",
+          "when": "view == projectHub.projects && viewItem == project",
+          "group": "1_actions@4"
+        },
+        {
+          "command": "projectHub.removeProject",
+          "when": "view == projectHub.projects && viewItem == project",
+          "group": "9_remove@1"
+        },
+        {
+          "command": "projectHub.forgetHost",
+          "when": "view == projectHub.projects && viewItem == hostRow",
+          "group": "9_remove@1"
+        },
+        {
+          "command": "projectHub.setupSshKey",
+          "when": "view == projectHub.projects && viewItem == hostRow && !remoteName",
+          "group": "1_ssh@1"
+        },
+        {
+          "command": "projectHub.killProcess",
+          "when": "view == projectHub.projects && viewItem == procRow",
+          "group": "inline@1"
+        },
+        {
+          "command": "projectHub.killProcess",
+          "when": "view == projectHub.projects && viewItem == procRow",
+          "group": "1_actions@1"
+        },
+        {
+          "command": "projectHub.toggleProcessFilter",
+          "when": "view == projectHub.projects && viewItem == servicesRow",
+          "group": "inline@1"
+        },
+        {
+          "command": "projectHub.openServiceInBrowser",
+          "when": "view == projectHub.services && viewItem == serviceRowWeb",
+          "group": "inline@1"
+        },
+        {
+          "command": "projectHub.openServiceInBrowser",
+          "when": "view == projectHub.services && viewItem == serviceRowWeb",
+          "group": "1_actions@0"
+        },
+        {
+          "command": "projectHub.restartService",
+          "when": "view == projectHub.services && (viewItem == serviceRow || viewItem == serviceRowWeb)",
+          "group": "inline@2"
+        },
+        {
+          "command": "projectHub.restartService",
+          "when": "view == projectHub.services && (viewItem == serviceRow || viewItem == serviceRowWeb)",
+          "group": "1_actions@2"
+        },
+        {
+          "command": "projectHub.killService",
+          "when": "view == projectHub.services && (viewItem == serviceRow || viewItem == serviceRowWeb)",
+          "group": "inline@3"
+        },
+        {
+          "command": "projectHub.killService",
+          "when": "view == projectHub.services && (viewItem == serviceRow || viewItem == serviceRowWeb)",
+          "group": "1_actions@3"
+        },
+        {
+          "command": "projectHub.killProjectServices",
+          "when": "view == projectHub.services && viewItem == serviceProjectRow",
+          "group": "inline@1"
+        },
+        {
+          "command": "projectHub.killProjectServices",
+          "when": "view == projectHub.services && viewItem == serviceProjectRow",
+          "group": "1_actions@1"
+        },
+        {
+          "command": "projectHub.sendInstruction",
+          "when": "view == projectHub.projects && viewItem == project",
+          "group": "1_actions@2"
+        },
+        {
+          "command": "projectHub.sendInstruction",
+          "when": "view == projectHub.projects && viewItem == agentRow",
+          "group": "1_actions@1"
+        },
+        {
+          "command": "projectHub.revealFileNodeInOS",
+          "when": "view == projectHub.projects && (viewItem == fileRow || viewItem == dirRow)",
+          "group": "1_actions@1"
+        },
+        {
+          "command": "projectHub.copyFilePath",
+          "when": "view == projectHub.projects && (viewItem == fileRow || viewItem == dirRow)",
+          "group": "1_actions@2"
+        }
+      ],
+      "terminal/context": [
+        {
+          "command": "projectHub.adoptTerminal",
+          "group": "2_projecthub@1"
+        }
+      ],
+      "terminal/title/context": [
+        {
+          "command": "projectHub.adoptTerminal",
+          "group": "2_projecthub@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "projectHub.forgetHost",
+          "when": "false"
+        },
+        {
+          "command": "projectHub.removeProject",
+          "when": "false"
+        },
+        {
+          "command": "projectHub.killProcess",
+          "when": "false"
+        },
+        {
+          "command": "projectHub.toggleProcessFilter",
+          "when": "false"
+        },
+        {
+          "command": "projectHub.killService",
+          "when": "false"
+        },
+        {
+          "command": "projectHub.restartService",
+          "when": "false"
+        },
+        {
+          "command": "projectHub.killProjectServices",
+          "when": "false"
+        },
+        {
+          "command": "projectHub.sendInstruction",
+          "when": "false"
+        },
+        {
+          "command": "projectHub.openBriefing",
+          "when": "false"
+        },
+        {
+          "command": "projectHub.revealServiceTerminal",
+          "when": "false"
+        },
+        {
+          "command": "projectHub.switchProject",
+          "when": "false"
+        },
+        {
+          "command": "projectHub.openServiceInBrowser",
+          "when": "false"
+        },
+        {
+          "command": "projectHub.revealFileNodeInOS",
+          "when": "false"
+        },
+        {
+          "command": "projectHub.copyFilePath",
+          "when": "false"
+        }
+      ]
+    },
+    "colors": [
+      {
+        "id": "projectHub.activeProject",
+        "description": "%color.activeProject%",
+        "defaults": {
+          "dark": "#4fc3f7",
+          "light": "#0277bd",
+          "highContrast": "#4fc3f7",
+          "highContrastLight": "#0277bd"
+        }
+      }
+    ],
+    "configuration": {
+      "title": "Project Hub",
+      "properties": {
+        "projectHub.port": {
+          "type": "number",
+          "default": 43917,
+          "description": "%cfg.port%"
+        },
+        "projectHub.claudeCommand": {
+          "type": "string",
+          "default": "claude",
+          "description": "%cfg.claudeCommand%",
+          "deprecationMessage": "%cfg.claudeCommand.deprecated%"
+        },
+        "projectHub.agents": {
+          "type": "array",
+          "description": "%cfg.agents%",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "label",
+              "command"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "command": {
+                "type": "string"
+              },
+              "resumeCommand": {
+                "type": "string"
+              },
+              "resumeSessionCommand": {
+                "type": "string"
+              }
+            }
+          },
+          "default": [
+            {
+              "id": "claude",
+              "label": "Claude",
+              "command": "claude",
+              "resumeCommand": "claude --continue",
+              "resumeSessionCommand": "claude --resume {sessionId}"
+            },
+            {
+              "id": "gemini",
+              "label": "Gemini",
+              "command": "gemini",
+              "resumeCommand": "gemini --resume"
+            },
+            {
+              "id": "codex",
+              "label": "Codex",
+              "command": "codex",
+              "resumeCommand": "codex resume --last"
+            },
+            {
+              "id": "antigravity",
+              "label": "Antigravity",
+              "command": "agy",
+              "resumeCommand": "agy --continue",
+              "resumeSessionCommand": "agy --conversation {sessionId}"
+            },
+            {
+              "id": "opencode",
+              "label": "OpenCode",
+              "command": "opencode",
+              "resumeCommand": "opencode --continue",
+              "resumeSessionCommand": "opencode --session {sessionId}"
+            },
+            {
+              "id": "terminal",
+              "label": "Terminal",
+              "command": ""
+            }
+          ]
+        },
+        "projectHub.defaultAgent": {
+          "type": "string",
+          "default": "claude",
+          "description": "%cfg.defaultAgent%"
+        },
+        "projectHub.focusClaudeTerminalOnSwitch": {
+          "type": "boolean",
+          "default": true,
+          "description": "%cfg.focusTerminal%"
+        },
+        "projectHub.switchOnRowClick": {
+          "type": "boolean",
+          "default": true,
+          "description": "%cfg.switchOnRowClick%"
+        },
+        "projectHub.autoInstallHooks": {
+          "type": "boolean",
+          "default": true,
+          "description": "%cfg.autoInstallHooks%"
+        },
+        "projectHub.autoStartClaudeOnSwitch": {
+          "type": "boolean",
+          "default": true,
+          "description": "%cfg.autoStart%"
+        },
+        "projectHub.restoreEditorsOnSwitch": {
+          "type": "boolean",
+          "default": true,
+          "description": "%cfg.restoreEditors%"
+        },
+        "projectHub.terminalsInEditor": {
+          "type": "boolean",
+          "default": false,
+          "description": "%cfg.terminalsInEditor%"
+        },
+        "projectHub.splitAgentTerminals": {
+          "type": "boolean",
+          "default": true,
+          "description": "%cfg.splitAgentTerminals%"
+        },
+        "projectHub.projectTerminalGrid": {
+          "type": "boolean",
+          "default": true,
+          "description": "%cfg.projectTerminalGrid%"
+        },
+        "projectHub.resumeAgentsOnRestart": {
+          "type": "boolean",
+          "default": true,
+          "description": "%cfg.resumeAgentsOnRestart%"
+        },
+        "projectHub.fileTreeExclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            ".git",
+            "node_modules",
+            ".venv",
+            "__pycache__",
+            "dist",
+            "out",
+            ".next"
+          ],
+          "description": "%cfg.fileTreeExclude%"
+        },
+        "projectHub.showAllProcesses": {
+          "type": "boolean",
+          "default": false,
+          "description": "%cfg.showAllProcesses%"
+        },
+        "projectHub.windowColor": {
+          "type": "boolean",
+          "default": false,
+          "description": "%cfg.windowColor%"
+        },
+        "projectHub.notifyForActiveProject": {
+          "type": "boolean",
+          "default": true,
+          "description": "%cfg.notifyActive%"
+        },
+        "projectHub.notificationTimeout": {
+          "type": "number",
+          "default": 10,
+          "description": "%cfg.notificationTimeout%"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package --allow-missing-repository",
+    "publish": "vsce publish --allow-missing-repository"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.93.0",
+    "@vscode/vsce": "^3.0.0",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "jsonc-parser": "^3.3.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pea-pineappple/Project-Hub.git"
+  },
+  "homepage": "https://github.com/pea-pineappple/Project-Hub#readme",
+  "bugs": {
+    "url": "https://github.com/pea-pineappple/Project-Hub/issues"
+  }
+}
