@@ -42,7 +42,7 @@
   "cfg.focusTerminal": "切换项目时，同时显示属于该项目的终端（其代理终端，或工作目录位于项目内的终端）。",
   "cfg.switchOnRowClick": "点击项目下的行（代理状态、用量）或服务行时，先切换到该项目，使资源管理器与刚打开的终端保持一致。关闭后可在不改变资源管理器的情况下查看其他项目。",
   "cfg.autoInstallHooks": "打开代理终端时，如果缺少完成通知钩子则自动安装。",
-  "cfg.autoStart": "切换项目时，如果该项目没有终端则自动启动 Claude 终端（如有历史对话则用 --continue 恢复）。",
+  "cfg.autoStart": "切换项目时，如果该项目没有终端则自动启动代理终端——默认代理，或当 projectHub.autoStartAgent 为 \"ask\" 时显示选择框（Claude 如有历史对话则用 --continue 恢复）。",
   "cfg.restoreEditors": "切换项目时，关闭上一个项目的编辑器标签页，并恢复目标项目最后打开的标签页。",
   "cfg.terminalsInEditor": "将代理终端作为编辑器标签页打开，而不是底部面板。同时查看多个代理时更容易进行网格布局。",
   "cfg.splitAgentTerminals": "当项目已打开代理终端时，将下一个代理拆分到其旁边打开，以便同时查看。",
@@ -53,5 +53,9 @@
   "cfg.windowColor": "切换项目时将标题栏颜色更改为项目的标识颜色。（默认关闭 — 活动项目会在列表中高亮显示）",
   "cfg.notifyActive": "活动项目的工作完成时也显示通知（仅当窗口失去焦点时）。",
   "cfg.notificationTimeout": "N 秒后自动隐藏通知弹窗。隐藏的通知会保留在通知中心（铃铛图标），之后仍可点击\"切换到项目\"按钮。设为 0 则一直显示，直到手动关闭。",
-  "cmd.restartService": "重启服务"
+  "cmd.restartService": "重启服务",
+  "cmd.selectDefaultAgent": "Project Hub: 选择默认代理",
+  "cfg.autoStartAgent": "切换到没有已打开代理终端的项目时启动什么（需开启 projectHub.autoStartClaudeOnSwitch）。",
+  "cfg.autoStartAgent.default": "自动启动 projectHub.defaultAgent。",
+  "cfg.autoStartAgent.ask": "每次询问要启动的代理。"
 }

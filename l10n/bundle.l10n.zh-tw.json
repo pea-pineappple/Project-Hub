@@ -141,5 +141,12 @@
   "Set Up SSH Key": "設定 SSH 金鑰",
   "Open Anyway": "仍然開啟",
   "Don't Ask for This Server": "此伺服器不再詢問",
-  "{0} has no SSH key login, so Remote-SSH will ask for the password several times on every connection. Set up a key now? (password once)": "{0} 未設定 SSH 金鑰登入，Remote-SSH 每次連線都會多次詢問密碼。現在設定金鑰嗎？(只需輸入一次密碼)"
+  "{0} has no SSH key login, so Remote-SSH will ask for the password several times on every connection. Set up a key now? (password once)": "{0} 未設定 SSH 金鑰登入，Remote-SSH 每次連線都會多次詢問密碼。現在設定金鑰嗎？(只需輸入一次密碼)",
+  "Always start this agent (set as default)": "一律啟動此代理（設為預設）",
+  "{0}: no agent session is open": "{0}：沒有已開啟的代理工作階段",
+  "current": "目前",
+  "Ask every time": "每次詢問",
+  "Choose the agent when switching to a project with no open session": "切換到沒有已開啟工作階段的專案時選擇代理",
+  "Agent to start when a project has no open session": "專案沒有已開啟工作階段時啟動的代理",
+  "Auto-start on switch is off (projectHub.autoStartClaudeOnSwitch). Turn it on to use this.": "切換時自動啟動已關閉（projectHub.autoStartClaudeOnSwitch）。請開啟後使用。"
 }

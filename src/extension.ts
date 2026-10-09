@@ -322,6 +322,10 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.window.tabGroups.onDidChangeTabs,
         vscode.window.tabGroups.onDidChangeTabGroups
     ];
+    // 원격(SSH 등) 창은 터미널 이동·생성이 원격 서버를 거쳐 로컬보다 몇 배 느리다.
+    // 대기 상한을 그대로 두면 터미널이 칸에 들어오기 전에 다음 칸으로 넘어가 버려
+    // 첫 칸(왼쪽)이 빈 그룹으로 남는다 → 원격이면 상한을 늘린다
+    const LATENCY = vscode.env.remoteName ? 4 : 1;
     const terminalTabCount = () =>
         vscode.window.tabGroups.all.reduce(
             (n, g) => n + g.tabs.filter(t => t.input instanceof vscode.TabInputTerminal).length,
@@ -349,15 +353,27 @@ export function activate(context: vscode.ExtensionContext): void {
         });
         for (let i = 0; i < cells.length; i++) {
             for (const term of cells[i]) {
+                // 막 만든 터미널은 프로세스가 붙기 전에 옮기면 이동이 늦게 반영된다 (원격에서 특히)
+                await Promise.race([term.processId, new Promise(r => setTimeout(r, 1000 * LATENCY))]);
                 await vscode.commands.executeCommand(FOCUS_GROUP[Math.min(i, k - 1)]);
                 const before = terminalTabCount();
                 term.show(false);
-                await waitUntil(() => vscode.window.activeTerminal === term, [vscode.window.onDidChangeActiveTerminal], 300);
+                await waitUntil(
+                    () => vscode.window.activeTerminal === term,
+                    [vscode.window.onDidChangeActiveTerminal],
+                    300 * LATENCY
+                );
                 await vscode.commands.executeCommand('workbench.action.terminal.moveToEditor');
-                await waitUntil(() => terminalTabCount() > before, TAB_EVENTS, 500);
+                await waitUntil(() => terminalTabCount() > before, TAB_EVENTS, 500 * LATENCY);
             }
         }
         await vscode.commands.executeCommand('workbench.action.closePanel');
+        // 그래도 늦게 반영돼 빈 칸이 남았으면 정리 (빈 칸은 그리드를 밀어낼 뿐 쓸모가 없다)
+        const expected = cells.flat().length;
+        await waitUntil(() => terminalTabCount() >= expected, TAB_EVENTS, 500 * LATENCY);
+        if (vscode.window.tabGroups.all.some(g => g.tabs.length === 0)) {
+            await unlockAndCloseEmptyGroups();
+        }
     }
 
     /**
@@ -475,10 +491,10 @@ export function activate(context: vscode.ExtensionContext): void {
                     return g.viewColumn === column && !!g.activeTab && g.tabs.indexOf(g.activeTab) === index;
                 },
                 TAB_EVENTS,
-                300
+                300 * LATENCY
             );
             await vscode.commands.executeCommand('workbench.action.terminal.moveToTerminalPanel');
-            await waitUntil(() => terminalTabCount() < before, TAB_EVENTS, 500);
+            await waitUntil(() => terminalTabCount() < before, TAB_EVENTS, 500 * LATENCY);
         }
     }
 
@@ -554,10 +570,73 @@ export function activate(context: vscode.ExtensionContext): void {
                 // 전환한 프로젝트에 터미널이 없으면 기본 에이전트를 자동 시작.
                 // 세션 존재를 확인할 수 있는 에이전트만 자동 resume — 확인 불가 에이전트에
                 // 무조건 resume을 보내면 세션이 없을 때 오류로 종료될 수 있다
-                const agent = getDefaultAgent();
-                openAgent(project, agent, canVerifySessions(agent), false);
+                if (config().get<string>('autoStartAgent', 'default') === 'ask') {
+                    void askAgentOnSwitch(project);
+                } else {
+                    const agent = getDefaultAgent();
+                    openAgent(project, agent, canVerifySessions(agent), false);
+                }
             }
         }
+    }
+
+    /** 에이전트 선택 목록 — 에이전트마다 새 세션, resume 지원 시 이어서 항목 */
+    function agentPickItems(): (vscode.QuickPickItem & { agent: AgentDef; resume: boolean })[] {
+        return getAgents().flatMap(agent => [
+            { label: `$(terminal) ${vscode.l10n.t('{0} — new session', agent.label)}`, agent, resume: false },
+            ...(agent.resumeCommand
+                ? [
+                      {
+                          label: `$(history) ${vscode.l10n.t('{0} — resume (last session)', agent.label)}`,
+                          agent,
+                          resume: true
+                      }
+                  ]
+                : [])
+        ]);
+    }
+
+    /**
+     * autoStartAgent=ask: 열린 터미널이 없는 프로젝트로 전환하면 실행할 에이전트를 묻는다.
+     * 항목의 핀 버튼은 그 에이전트를 기본값으로 저장하고 이후 묻지 않게 한다. Esc면 아무것도 열지 않음.
+     */
+    async function askAgentOnSwitch(project: Project): Promise<void> {
+        const pinButton: vscode.QuickInputButton = {
+            iconPath: new vscode.ThemeIcon('pin'),
+            tooltip: vscode.l10n.t('Always start this agent (set as default)')
+        };
+        const qp = vscode.window.createQuickPick<ReturnType<typeof agentPickItems>[number]>();
+        qp.title = vscode.l10n.t('{0}: no agent session is open', project.name);
+        qp.placeholder = vscode.l10n.t('Select an agent to run in {0}', project.name);
+        qp.items = agentPickItems().map(item => ({ ...item, buttons: [pinButton] }));
+        // 전환 직후 그리드 정리 등으로 포커스가 옮겨가도 선택 창이 닫히지 않게
+        qp.ignoreFocusOut = true;
+        const result = await new Promise<{ item: ReturnType<typeof agentPickItems>[number]; pin: boolean } | undefined>(
+            resolve => {
+                qp.onDidAccept(() => resolve(qp.selectedItems[0] ? { item: qp.selectedItems[0], pin: false } : undefined));
+                qp.onDidTriggerItemButton(e => resolve({ item: e.item, pin: true }));
+                qp.onDidHide(() => resolve(undefined));
+                qp.show();
+            }
+        );
+        qp.dispose();
+        if (!result) {
+            return;
+        }
+        if (result.pin) {
+            await setDefaultAgent(result.item.agent.id, 'default');
+        }
+        // 고르는 사이 다른 경로로 터미널이 열렸으면 중복으로 열지 않는다
+        if (!terminals.findForProject(project)) {
+            openAgent(project, result.item.agent, result.item.resume, false);
+        }
+    }
+
+    async function setDefaultAgent(agentId: string | undefined, mode: 'default' | 'ask'): Promise<void> {
+        if (agentId) {
+            await config().update('defaultAgent', agentId, vscode.ConfigurationTarget.Global);
+        }
+        await config().update('autoStartAgent', mode, vscode.ConfigurationTarget.Global);
     }
 
     // ── 하위 행 클릭 시 프로젝트 전환 ───────────────────────────
@@ -969,23 +1048,42 @@ export function activate(context: vscode.ExtensionContext): void {
                 vscode.window.showWarningMessage(vscode.l10n.t('Target project not found.'));
                 return;
             }
-            const items = getAgents().flatMap(agent => [
-                { label: `$(terminal) ${vscode.l10n.t('{0} — new session', agent.label)}`, agent, resume: false },
-                ...(agent.resumeCommand
-                    ? [
-                          {
-                              label: `$(history) ${vscode.l10n.t('{0} — resume (last session)', agent.label)}`,
-                              agent,
-                              resume: true
-                          }
-                      ]
-                    : [])
-            ]);
-            const picked = await vscode.window.showQuickPick(items, {
+            const picked = await vscode.window.showQuickPick(agentPickItems(), {
                 placeHolder: vscode.l10n.t('Select an agent to run in {0}', target.name)
             });
             if (picked) {
                 openAgent(target, picked.agent, picked.resume, true);
+            }
+        }),
+
+        // 전환 시 자동 시작할 기본 에이전트 지정 — 또는 매번 묻기
+        vscode.commands.registerCommand('projectHub.selectDefaultAgent', async () => {
+            const askMode = config().get<string>('autoStartAgent', 'default') === 'ask';
+            const current = getDefaultAgent().id;
+            const items: (vscode.QuickPickItem & { agentId?: string })[] = [
+                ...getAgents().map(agent => ({
+                    label: `$(robot) ${agent.label}`,
+                    description: !askMode && agent.id === current ? vscode.l10n.t('current') : undefined,
+                    agentId: agent.id
+                })),
+                { label: '', kind: vscode.QuickPickItemKind.Separator },
+                {
+                    label: `$(question) ${vscode.l10n.t('Ask every time')}`,
+                    description: askMode ? vscode.l10n.t('current') : undefined,
+                    detail: vscode.l10n.t('Choose the agent when switching to a project with no open session')
+                }
+            ];
+            const picked = await vscode.window.showQuickPick(items, {
+                placeHolder: vscode.l10n.t('Agent to start when a project has no open session')
+            });
+            if (!picked) {
+                return;
+            }
+            await setDefaultAgent(picked.agentId, picked.agentId ? 'default' : 'ask');
+            if (!config().get<boolean>('autoStartClaudeOnSwitch', true)) {
+                vscode.window.showInformationMessage(
+                    vscode.l10n.t('Auto-start on switch is off (projectHub.autoStartClaudeOnSwitch). Turn it on to use this.')
+                );
             }
         }),
 

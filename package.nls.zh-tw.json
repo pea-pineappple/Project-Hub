@@ -42,7 +42,7 @@
   "cfg.focusTerminal": "切換專案時，同時顯示屬於該專案的終端機（其代理終端機，或工作目錄位於專案內的終端機）。",
   "cfg.switchOnRowClick": "點擊專案下的列（代理狀態、使用量）或服務列時，先切換到該專案，使檔案總管與剛開啟的終端機保持一致。關閉後可在不改變檔案總管的情況下查看其他專案。",
   "cfg.autoInstallHooks": "開啟代理終端機時，如果缺少完成通知掛鉤則自動安裝。",
-  "cfg.autoStart": "切換專案時，如果該專案沒有終端機則自動啟動 Claude 終端機（如有歷史對話則用 --continue 還原）。",
+  "cfg.autoStart": "切換專案時，如果該專案沒有終端機則自動啟動代理終端機——預設代理，或當 projectHub.autoStartAgent 為 \"ask\" 時顯示選擇框（Claude 如有歷史對話則用 --continue 還原）。",
   "cfg.restoreEditors": "切換專案時，關閉上一個專案的編輯器索引標籤，並還原目標專案最後開啟的索引標籤。",
   "cfg.terminalsInEditor": "將代理終端機作為編輯器索引標籤開啟，而不是底部面板。同時檢視多個代理時更容易進行網格配置。",
   "cfg.splitAgentTerminals": "當專案已開啟代理終端機時，將下一個代理分割到其旁邊開啟，以便同時檢視。",
@@ -53,5 +53,9 @@
   "cfg.windowColor": "切換專案時將標題列顏色變更為專案的識別顏色。（預設關閉 — 使用中的專案會在清單中醒目顯示）",
   "cfg.notifyActive": "使用中專案的工作完成時也顯示通知（僅當視窗失去焦點時）。",
   "cfg.notificationTimeout": "N 秒後自動隱藏通知快顯。隱藏的通知會保留在通知中心（鈴鐺圖示），之後仍可按一下「切換到專案」按鈕。設為 0 則一直顯示，直到手動關閉。",
-  "cmd.restartService": "重新啟動服務"
+  "cmd.restartService": "重新啟動服務",
+  "cmd.selectDefaultAgent": "Project Hub: 選擇預設代理",
+  "cfg.autoStartAgent": "切換到沒有已開啟代理終端機的專案時啟動什麼（需開啟 projectHub.autoStartClaudeOnSwitch）。",
+  "cfg.autoStartAgent.default": "自動啟動 projectHub.defaultAgent。",
+  "cfg.autoStartAgent.ask": "每次詢問要啟動的代理。"
 }

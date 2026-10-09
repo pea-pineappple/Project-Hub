@@ -141,5 +141,12 @@
   "Set Up SSH Key": "SSH キーを設定",
   "Open Anyway": "このまま開く",
   "Don't Ask for This Server": "このサーバーでは今後確認しない",
-  "{0} has no SSH key login, so Remote-SSH will ask for the password several times on every connection. Set up a key now? (password once)": "{0} には SSH キーログインが設定されていないため、Remote-SSH は接続のたびにパスワードを何度も求めます。今キーを設定しますか？(パスワード入力は 1 回)"
+  "{0} has no SSH key login, so Remote-SSH will ask for the password several times on every connection. Set up a key now? (password once)": "{0} には SSH キーログインが設定されていないため、Remote-SSH は接続のたびにパスワードを何度も求めます。今キーを設定しますか？(パスワード入力は 1 回)",
+  "Always start this agent (set as default)": "常にこのエージェントで起動 (既定に設定)",
+  "{0}: no agent session is open": "{0}: 開いているエージェントセッションがありません",
+  "current": "現在",
+  "Ask every time": "毎回確認する",
+  "Choose the agent when switching to a project with no open session": "セッションのないプロジェクトに切り替えたときにエージェントを選択します",
+  "Agent to start when a project has no open session": "セッションのないプロジェクトで起動するエージェント",
+  "Auto-start on switch is off (projectHub.autoStartClaudeOnSwitch). Turn it on to use this.": "切り替え時の自動起動がオフです (projectHub.autoStartClaudeOnSwitch)。使用するにはオンにしてください。"
 }
