@@ -42,7 +42,7 @@
   "cfg.focusTerminal": "When switching projects, also reveal a terminal belonging to that project (its agent terminal, or any terminal whose working directory is inside the project).",
   "cfg.switchOnRowClick": "Clicking a row under a project (agent status, usage) or a service row switches to that project first, so the Explorer matches the terminal you just opened. Turn off to inspect another project without changing the Explorer.",
   "cfg.autoInstallHooks": "Automatically install completion-notification hooks when opening an agent terminal if they are missing.",
-  "cfg.autoStart": "When switching projects, automatically start a Claude terminal if the project has none (restores the last conversation with --continue when available).",
+  "cfg.autoStart": "When switching projects, automatically start an agent terminal if the project has none — the default agent, or a picker when projectHub.autoStartAgent is \"ask\" (Claude restores the last conversation with --continue when available).",
   "cfg.restoreEditors": "When switching projects, close the previous project's editor tabs and restore the tabs that were last open in the target project.",
   "cfg.terminalsInEditor": "Open agent terminals as editor tabs instead of the bottom panel. Makes grid layouts easier when watching multiple agents.",
   "cfg.splitAgentTerminals": "When a project already has an agent terminal open, open the next agent split beside it so both are visible at once.",
@@ -53,5 +53,9 @@
   "cfg.windowColor": "Change the title bar color to the project's identification color on switch. (Off by default — the active project is highlighted in the list.)",
   "cfg.notifyActive": "Also show notifications for the active project's completed work (only when the window is unfocused).",
   "cfg.notificationTimeout": "Auto-hide notification toasts after N seconds. Hidden notifications remain in the notification center (bell icon), so 'Switch to Project' can still be clicked later. 0 keeps toasts until closed manually.",
-  "cmd.restartService": "Restart Service"
+  "cmd.restartService": "Restart Service",
+  "cmd.selectDefaultAgent": "Project Hub: Select Default Agent",
+  "cfg.autoStartAgent": "What to start when switching to a project with no open agent terminal (requires projectHub.autoStartClaudeOnSwitch).",
+  "cfg.autoStartAgent.default": "Start projectHub.defaultAgent automatically.",
+  "cfg.autoStartAgent.ask": "Ask which agent to start every time."
 }

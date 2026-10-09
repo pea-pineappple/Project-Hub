@@ -97,7 +97,7 @@ Agents are defined in the `projectHub.agents` setting. Built-in defaults:
 | Terminal | *(shell only)* | — | — |
 
 - Add any CLI by appending to the array — known ids auto-fill missing fields.
-- `projectHub.defaultAgent` controls auto-start on switch and the default terminal button.
+- `projectHub.defaultAgent` controls auto-start on switch and the default terminal button. Run **Project Hub: Select Default Agent** to pick it from a list, or choose *Ask every time* to get a picker whenever you switch to a project with no open session.
 - Notifications work out of the box for Claude, Codex, Gemini, and Antigravity. OpenCode (plugin-based, no hooks) and the plain Terminal entry have none. Custom agents can be wired manually by POSTing `{"cwd": "..."}` to `http://127.0.0.1:43917/hook/stop?agent=<id>`.
 
 ## Sessions after a VS Code restart
@@ -193,6 +193,7 @@ Right-click a project row for per-project actions: resume, pick a session, open 
 | `projectHub.focusClaudeTerminalOnSwitch` | `true` | Reveal the project's terminal on switch |
 | `projectHub.switchOnRowClick` | `true` | Clicking an agent, usage, or service row switches to that project first |
 | `projectHub.autoStartClaudeOnSwitch` | `true` | Auto-start the default agent if the project has no terminal |
+| `projectHub.autoStartAgent` | `default` | What auto-start opens: `default` = `projectHub.defaultAgent`, `ask` = pick an agent each time |
 | `projectHub.autoInstallHooks` | `true` | Install notification hooks automatically |
 | `projectHub.restoreEditorsOnSwitch` | `true` | Save and restore editor tabs per project |
 | `projectHub.projectTerminalGrid` | `true` | Show only the active project's agent terminals, in an editor grid |
@@ -444,6 +445,7 @@ VS Code는 터미널 탭 목록을 프로젝트별로 거르는 기능을 제공
 | `projectHub.focusClaudeTerminalOnSwitch` | `true` | 전환 시 해당 프로젝트 터미널 표시 |
 | `projectHub.switchOnRowClick` | `true` | 에이전트·사용량·서비스 행 클릭 시 먼저 그 프로젝트로 전환 |
 | `projectHub.autoStartClaudeOnSwitch` | `true` | 터미널이 없으면 기본 에이전트 자동 시작 |
+| `projectHub.autoStartAgent` | `default` | 자동 시작 대상: `default` = `projectHub.defaultAgent`, `ask` = 매번 에이전트 선택 |
 | `projectHub.autoInstallHooks` | `true` | 알림 hook 자동 설치 |
 | `projectHub.restoreEditorsOnSwitch` | `true` | 프로젝트별 에디터 탭 저장·복원 |
 | `projectHub.projectTerminalGrid` | `true` | 활성 프로젝트의 에이전트 터미널만 에디터 그리드로 표시 |

@@ -141,5 +141,12 @@
   "Set Up SSH Key": "SSH 키 설정",
   "Open Anyway": "그냥 열기",
   "Don't Ask for This Server": "이 서버는 다시 묻지 않기",
-  "{0} has no SSH key login, so Remote-SSH will ask for the password several times on every connection. Set up a key now? (password once)": "{0}에는 SSH 키 로그인이 설정되어 있지 않아, Remote-SSH가 연결할 때마다 비밀번호를 여러 번 묻습니다. 지금 키를 설정할까요? (비밀번호 1회 입력)"
+  "{0} has no SSH key login, so Remote-SSH will ask for the password several times on every connection. Set up a key now? (password once)": "{0}에는 SSH 키 로그인이 설정되어 있지 않아, Remote-SSH가 연결할 때마다 비밀번호를 여러 번 묻습니다. 지금 키를 설정할까요? (비밀번호 1회 입력)",
+  "Always start this agent (set as default)": "항상 이 에이전트로 시작 (기본값으로 설정)",
+  "{0}: no agent session is open": "{0}: 열린 에이전트 세션이 없습니다",
+  "current": "현재",
+  "Ask every time": "매번 묻기",
+  "Choose the agent when switching to a project with no open session": "열린 세션이 없는 프로젝트로 전환할 때 에이전트를 선택합니다",
+  "Agent to start when a project has no open session": "열린 세션이 없는 프로젝트에서 시작할 에이전트",
+  "Auto-start on switch is off (projectHub.autoStartClaudeOnSwitch). Turn it on to use this.": "전환 시 자동 시작이 꺼져 있습니다 (projectHub.autoStartClaudeOnSwitch). 이 설정을 쓰려면 켜 주세요."
 }

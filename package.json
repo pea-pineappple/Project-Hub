@@ -2,7 +2,7 @@
   "name": "projecthub",
   "displayName": "Project Hub — Multi-Project & Agent Workspace",
   "description": "%ext.description%",
-  "version": "0.19.2",
+  "version": "0.20.0",
   "l10n": "./l10n",
   "publisher": "PecuniaEstAI",
   "private": true,
@@ -132,6 +132,11 @@
         "command": "projectHub.openAgentTerminal",
         "title": "%cmd.openAgentTerminal%",
         "icon": "$(robot)"
+      },
+      {
+        "command": "projectHub.selectDefaultAgent",
+        "title": "%cmd.selectDefaultAgent%",
+        "icon": "$(settings-gear)"
       },
       {
         "command": "projectHub.setupNotifications",
@@ -576,6 +581,19 @@
           "type": "boolean",
           "default": true,
           "description": "%cfg.autoStart%"
+        },
+        "projectHub.autoStartAgent": {
+          "type": "string",
+          "enum": [
+            "default",
+            "ask"
+          ],
+          "enumDescriptions": [
+            "%cfg.autoStartAgent.default%",
+            "%cfg.autoStartAgent.ask%"
+          ],
+          "default": "default",
+          "description": "%cfg.autoStartAgent%"
         },
         "projectHub.restoreEditorsOnSwitch": {
           "type": "boolean",
