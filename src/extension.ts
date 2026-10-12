@@ -1734,7 +1734,13 @@ export function activate(context: vscode.ExtensionContext): void {
             // 에이전트를 하나 더 띄우지 않는다
             command = wrapForPersistence(command, r.project, r.agent.id, sessionId);
             ensureHooks(r.agent.id);
-            sendWhenReady(r.terminal, command);
+            // 셸이 준비될 때까지 기다리는 사이 다른 경로로 명령(예: tmux attach)이 먼저 들어가면
+            // 이 명령은 셸이 아니라 실행 중인 에이전트 입력창에 타이핑된다 → 보내기 직전에
+            // 셸이 여전히 비어 있는지 다시 확인하고, 모르면(조회 실패) 보내지 않는다
+            sendWhenReady(r.terminal, command, undefined, async () => {
+                invalidateProcessCache();
+                return (await hasRunningChild(pid)) === false;
+            });
         }
     }
     // ── 원격 재연결 시 tmux 세션에 다시 붙기 ───────────────────────

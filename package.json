@@ -2,7 +2,7 @@
   "name": "projecthub",
   "displayName": "Project Hub — Multi-Project & Agent Workspace",
   "description": "%ext.description%",
-  "version": "0.21.0",
+  "version": "0.21.1",
   "l10n": "./l10n",
   "publisher": "PecuniaEstAI",
   "private": true,

@@ -20,9 +20,20 @@ const AGENT_ICONS: Record<string, string> = {
  * 첫 글자가 잘려 "laude --continue"처럼 실행되는 문제가 있다.
  * shell integration이 활성화되면 그 시점에 보내고, 끝내 안 오면(cmd.exe 등) 일정 시간 뒤 보낸다.
  */
-export function sendWhenReady(terminal: vscode.Terminal, text: string, timeoutMs = 4000): void {
+export function sendWhenReady(
+    terminal: vscode.Terminal,
+    text: string,
+    timeoutMs = 4000,
+    /** 보내기 직전에 한 번 더 확인 — false면 보내지 않는다 (그사이 셸에서 무언가 실행됐을 때 등) */
+    stillWanted?: () => Promise<boolean>
+): void {
+    const deliver = async () => {
+        if (terminal.exitStatus === undefined && (!stillWanted || (await stillWanted()))) {
+            terminal.sendText(text, true);
+        }
+    };
     if (terminal.shellIntegration) {
-        terminal.sendText(text, true);
+        void deliver();
         return;
     }
     let done = false;
@@ -33,9 +44,7 @@ export function sendWhenReady(terminal: vscode.Terminal, text: string, timeoutMs
         done = true;
         listener.dispose();
         clearTimeout(timer);
-        if (terminal.exitStatus === undefined) {
-            terminal.sendText(text, true);
-        }
+        void deliver();
     };
     const listener = vscode.window.onDidChangeTerminalShellIntegration(e => {
         if (e.terminal === terminal) {
