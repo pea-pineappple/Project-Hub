@@ -48,7 +48,7 @@ Project Hub keeps **one** window. Projects swap inside a hub workspace, so the E
 | VS Code | 1.93.0 or newer |
 | `curl` | Used by the notification hooks. Bundled with Windows 10+, macOS, and most Linux distros. |
 | Agent CLIs | Whichever you use — `claude`, `gemini`, `codex`, `agy`. Must be on your `PATH`. |
-| OS | Cross-platform, **except** the Services and Background Processes views, which use PowerShell and are Windows-only for now. |
+| OS | Cross-platform. The Services and Background Processes views support Windows and Linux (including SSH remotes); not yet macOS. |
 
 ## Install
 
@@ -97,7 +97,7 @@ Agents are defined in the `projectHub.agents` setting. Built-in defaults:
 | Terminal | *(shell only)* | — | — |
 
 - Add any CLI by appending to the array — known ids auto-fill missing fields.
-- `projectHub.defaultAgent` controls auto-start on switch and the default terminal button. Run **Project Hub: Select Default Agent** to pick it from a list, or choose *Ask every time* to get a picker whenever you switch to a project with no open session.
+- Switching to a project with no open session auto-starts `projectHub.defaultAgent` (`claude` by default), which is also the default terminal button. Run **Project Hub: Select Default Agent** to pick it from a list, or choose *Ask every time* (`projectHub.autoStartAgent` = `ask`) to get a picker on each such switch — the 📌 button on an item makes it the default. Turn auto-start off with `projectHub.autoStartClaudeOnSwitch`.
 - Notifications work out of the box for Claude, Codex, Gemini, and Antigravity. OpenCode (plugin-based, no hooks) and the plain Terminal entry have none. Custom agents can be wired manually by POSTing `{"cwd": "..."}` to `http://127.0.0.1:43917/hook/stop?agent=<id>`.
 
 ## Sessions after a VS Code restart
@@ -106,7 +106,7 @@ Terminal processes die on a full restart, but conversation history is preserved 
 
 - **⏱ Resume** restores the last conversation (`claude --continue`).
 - Right-click → **Open a Claude Session** lists saved sessions with previews. Each opens in its own terminal (`claude --resume <id>`), so several sessions can run in parallel.
-- **Automatic re-run**: VS Code restores agent terminals as plain shells. A few seconds after startup, Project Hub re-runs the agent in each of them — the last session for a default terminal, that session for a Claude session terminal. Only shells started fresh by this launch are touched; after a window reload, or in a terminal where you quit the agent yourself, nothing is sent. Turn off with `projectHub.resumeAgentsOnRestart`.
+- **Automatic re-run**: VS Code restores agent terminals as plain shells. A few seconds after startup, Project Hub re-runs the agent in each of them — the last session for a default terminal, that session for a Claude session terminal. Only shells started fresh by this launch are touched; after a window reload, or in a terminal where you quit the agent yourself, nothing is sent. Works on Windows and Linux (not yet macOS). Turn off with `projectHub.resumeAgentsOnRestart`.
 
 ## Remote (SSH)
 
@@ -123,7 +123,8 @@ A dropped connection keeps remote terminals alive only for a while; a remote ser
 
 - **tmux installed**: each agent runs in `tmux new-session -A -s ph-<project>-<hash>-<agent>` (mouse scrolling on). On reconnect, Project Hub opens a terminal for each of its live tmux sessions and attaches — the agent never stopped.
 - **tmux missing**: agents run in plain terminals as before, with a one-time notice (*Don't Show Again* available). tmux is checked on every launch, so installing it later takes effect immediately.
-- Local windows are unaffected. Services, Background Processes, and restart revive are Windows-only and stay empty on a Linux remote.
+- Local windows are unaffected. Services and Background Processes work on a Linux remote too, including servers an agent started inside tmux.
+- After a full VS Code restart, restored agent terminals re-attach to their tmux session instead of starting a second agent (`projectHub.resumeAgentsOnRestart`).
 
 **One list across PCs and servers.** A VS Code window connects to one place only, so each PC and server keeps its own project list, and switching stays within that place. Every window also shares its list with the others:
 
@@ -232,7 +233,7 @@ Another window or program holds the port. The hub-workspace window owns it by pr
 The `⌂ Hub` anchor folder was removed from the workspace. Switch projects once and it is recreated in the first slot.
 
 **A project's Services section is empty although a dev server is running.**
-Service detection is Windows-only. On Windows, servers are matched by command line and process ancestry — a server launched in a way that never mentions the project path may not be attributed. It will still appear under **Background Processes** if it was started from an agent terminal.
+Service detection works on Windows and Linux (not yet macOS). Servers are matched by command line and process ancestry, and on Linux also by working directory — so `npm run dev` started inside the project folder is attributed even though the path never appears. On Windows, a server launched in a way that never mentions the project path may not be attributed; it will still appear under **Background Processes** if it was started from an agent terminal. On Linux, only your own user's processes are visible.
 
 **I clicked a row under a project, but the Explorer still shows the previous project.**
 Clicking an agent, usage, or service row switches to that project by default. If it doesn't, `projectHub.switchOnRowClick` is off — that setting exists so you can look at another project's terminal without moving the Explorer. The project row itself always switches.
@@ -254,7 +255,7 @@ It cannot. Hooks use `curl` with a 3-second timeout and fail silently when the s
 
 ## Limitations
 
-- Services and Background Processes require PowerShell and are Windows-only. Everything else is cross-platform.
+- Services and Background Processes support Windows (PowerShell) and Linux (`/proc`); macOS is not supported yet. Everything else is cross-platform.
 - Codex `resume --last` cwd filtering requires a 2026+ CLI.
 - Antigravity hook events follow current public docs — please report if notifications don't fire.
 - Usage figures are estimates from list prices, not billing data.
@@ -302,7 +303,7 @@ Project Hub는 창을 **하나만** 씁니다. 허브 워크스페이스 안에�
 | VS Code | 1.93.0 이상 |
 | `curl` | 알림 hook이 사용. Windows 10+, macOS, 대부분의 Linux에 기본 포함 |
 | 에이전트 CLI | 사용하는 것만 — `claude`, `gemini`, `codex`, `agy`. `PATH`에 있어야 합니다 |
-| OS | 크로스 플랫폼. 단 **서비스·백그라운드 프로세스**는 PowerShell 기반이라 현재 Windows 전용 |
+| OS | 크로스 플랫폼. **서비스·백그라운드 프로세스**는 Windows·Linux(SSH 원격 포함) 지원, macOS는 아직 미지원 |
 
 ## 설치
 
@@ -350,7 +351,11 @@ code --install-extension projecthub-<version>.vsix
 | OpenCode | `opencode` | `opencode --continue` | `opencode --session {sessionId}` |
 | Terminal | *(셸만 열기)* | — | — |
 
-배열에 항목을 추가하면 어떤 CLI든 등록할 수 있고, 알려진 id는 빠진 필드가 자동으로 채워집니다. Claude·Gemini·Codex·Antigravity는 알림을 지원하고, OpenCode(hook이 아닌 플러그인 방식)와 Terminal 항목은 알림이 없습니다. 직접 추가한 에이전트는 완료 시 `http://127.0.0.1:43917/hook/stop?agent=<id>`로 `{"cwd": "..."}`를 POST하도록 연결하면 됩니다.
+배열에 항목을 추가하면 어떤 CLI든 등록할 수 있고, 알려진 id는 빠진 필드가 자동으로 채워집니다.
+
+세션이 없는 프로젝트로 전환하면 기본적으로 `projectHub.defaultAgent`(기본값 `claude`)를 자동으로 띄웁니다. **Project Hub: 기본 에이전트 선택** 명령으로 목록에서 바꿀 수 있고, *매번 묻기*를 고르면(`projectHub.autoStartAgent`를 `ask`로) 전환할 때마다 띄울 에이전트를 선택합니다. 선택 창에서 항목 옆 📌를 누르면 그 에이전트가 기본값이 됩니다. 자동 시작 자체는 `projectHub.autoStartClaudeOnSwitch`로 끕니다.
+
+Claude·Gemini·Codex·Antigravity는 알림을 지원하고, OpenCode(hook이 아닌 플러그인 방식)와 Terminal 항목은 알림이 없습니다. 직접 추가한 에이전트는 완료 시 `http://127.0.0.1:43917/hook/stop?agent=<id>`로 `{"cwd": "..."}`를 POST하도록 연결하면 됩니다.
 
 ## 재시작 후 세션 복구
 
@@ -358,7 +363,7 @@ code --install-extension projecthub-<version>.vsix
 
 - **⏱ 이어서 열기**로 마지막 대화를 복원합니다(`claude --continue`).
 - 우클릭 → **Claude 세션 골라서 열기**로 저장된 세션을 미리보기와 함께 고르면, 각각 별도 터미널에서 병행 복원됩니다.
-- **자동 재실행**: VS Code는 에이전트 터미널을 셸만 남은 채 복원합니다. 시작 몇 초 뒤 Project Hub가 각 터미널에서 에이전트를 다시 실행합니다 — 기본 터미널은 마지막 세션, Claude 세션 터미널은 그 세션. 이번 실행에서 새로 뜬 셸만 대상이며, 창 리로드 후나 직접 에이전트를 종료해 둔 터미널에는 아무것도 보내지 않습니다. `projectHub.resumeAgentsOnRestart`로 끌 수 있습니다.
+- **자동 재실행**: VS Code는 에이전트 터미널을 셸만 남은 채 복원합니다. 시작 몇 초 뒤 Project Hub가 각 터미널에서 에이전트를 다시 실행합니다 — 기본 터미널은 마지막 세션, Claude 세션 터미널은 그 세션. 이번 실행에서 새로 뜬 셸만 대상이며, 창 리로드 후나 직접 에이전트를 종료해 둔 터미널에는 아무것도 보내지 않습니다. Windows·Linux에서 동작합니다 (macOS는 아직 미지원). `projectHub.resumeAgentsOnRestart`로 끌 수 있습니다.
 
 ## 원격 (SSH)
 
@@ -375,7 +380,8 @@ Remote-SSH에서는 확장이 원격 서버에서 실행되므로 에이전트 �
 
 - **tmux 있음**: 에이전트를 `tmux new-session -A -s ph-<프로젝트>-<해시>-<에이전트>`로 실행합니다(마우스 스크롤 켜짐). 다시 연결하면 Project Hub가 살아 있는 자기 tmux 세션마다 터미널을 열어 붙습니다 — 에이전트는 멈춘 적이 없습니다.
 - **tmux 없음**: 전처럼 일반 터미널로 실행하고 안내를 한 번 띄웁니다(*다시 표시 안 함* 가능). 실행할 때마다 tmux를 확인하므로 나중에 설치하면 바로 적용됩니다.
-- 로컬 창에는 영향이 없습니다. 서비스, 백그라운드 프로세스, 재시작 후 자동 재실행은 Windows 전용이라 Linux 원격에서는 비어 있습니다.
+- 로컬 창에는 영향이 없습니다. 서비스·백그라운드 프로세스는 Linux 원격에서도 동작하며, 에이전트가 tmux 안에서 띄운 서버도 잡힙니다.
+- VS Code를 완전히 재시작하면 복원된 에이전트 터미널이 에이전트를 새로 띄우지 않고 기존 tmux 세션에 다시 붙습니다 (`projectHub.resumeAgentsOnRestart`).
 
 **여러 PC·서버를 한 목록에서.** VS Code 창 하나는 한 곳에만 연결되므로, PC·서버마다 프로젝트 목록이 따로 있고 전환도 그 안에서만 됩니다. 대신 모든 창이 자기 목록을 서로 공유합니다.
 
@@ -484,7 +490,7 @@ Gemini는 hook을 PowerShell로 실행하는데, 예전 `curl … -d @-` 명령�
 `⌂ Hub` 앵커 폴더가 워크스페이스에서 제거된 상태입니다. 프로젝트를 한 번 전환하면 첫 자리에 다시 만들어집니다.
 
 **dev 서버가 도는데 서비스 섹션이 비어 있습니다.**
-서비스 탐지는 Windows 전용입니다. Windows에서도 명령줄과 조상 프로세스로 귀속을 판단하므로, 프로젝트 경로가 전혀 드러나지 않게 실행된 서버는 누락될 수 있습니다. 에이전트 터미널에서 띄운 것이라면 **백그라운드 프로세스**에는 나타납니다.
+서비스 탐지는 Windows와 Linux에서 동작합니다 (macOS는 아직 미지원). 명령줄과 조상 프로세스로 귀속을 판단하고, Linux에서는 작업 디렉터리도 봅니다 — 프로젝트 폴더에서 `npm run dev`로 띄운 서버는 경로가 드러나지 않아도 잡힙니다. Windows에서는 프로젝트 경로가 전혀 드러나지 않게 실행된 서버가 누락될 수 있으며, 에이전트 터미널에서 띄운 것이라면 **백그라운드 프로세스**에는 나타납니다. Linux에서는 본인 계정의 프로세스만 보입니다.
 
 **프로젝트 하위 행을 클릭했는데 Explorer가 이전 프로젝트를 그대로 보여줍니다.**
 에이전트·사용량·서비스 행을 클릭하면 기본적으로 그 프로젝트로 전환됩니다. 전환되지 않는다면 `projectHub.switchOnRowClick`이 꺼져 있는 것입니다. 이 설정은 Explorer를 그대로 둔 채 다른 프로젝트의 터미널만 확인하고 싶을 때를 위한 것입니다. 프로젝트 행 본체는 설정과 무관하게 항상 전환합니다.
@@ -506,7 +512,7 @@ Python Environments 확장은 터미널에 명령을 입력하는 방식으로 �
 
 ## 알려진 제약
 
-- 서비스·백그라운드 프로세스는 PowerShell이 필요해 Windows 전용입니다. 그 외 기능은 크로스 플랫폼입니다.
+- 서비스·백그라운드 프로세스는 Windows(PowerShell)와 Linux(`/proc`)를 지원하며 macOS는 아직 미지원입니다. 그 외 기능은 크로스 플랫폼입니다.
 - Codex `resume --last`의 cwd 필터는 2026년 이후 CLI가 필요합니다.
 - Antigravity hook 이벤트는 현재 공개 문서 기준입니다. 알림이 오지 않으면 제보해 주세요.
 - 사용량 수치는 정가 기준 추정치이며 실제 청구 데이터가 아닙니다.

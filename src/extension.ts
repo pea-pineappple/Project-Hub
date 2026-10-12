@@ -9,7 +9,7 @@ import { AvatarStore, PALETTE, colorOf, contrastText } from './avatars';
 import { asProject, HubNode, ProjectDragAndDrop } from './projectTree';
 import { ProjectTreeProvider } from './projectTree';
 import { TerminalManager, sendWhenReady } from './terminalManager';
-import { initRemotePersist, liveTmuxSessions } from './remotePersist';
+import { initRemotePersist, liveTmuxSessions, wrapForPersistence } from './remotePersist';
 import { migrateFromOldId } from './legacyId';
 import { initSshKeySetup, offerKeySetupBeforeOpen, setupSshKey } from './sshKeySetup';
 import { HostEntry, currentHost, forgetHost, initHostRegistry, openOnHost, publishHost, takePendingSwitch } from './hostRegistry';
@@ -1723,11 +1723,16 @@ export function activate(context: vscode.ExtensionContext): void {
                 continue;
             }
             let command: string | undefined;
+            let sessionId: string | undefined;
             if (r.tag && canPickSessions(r.agent)) {
                 const session = listClaudeSessions(r.project.path, 100).find(x => sessionTag(x.id) === r.tag);
+                sessionId = session?.id;
                 command = session ? resolveSessionCommand(r.agent, session.id) : undefined;
             }
             command ??= resolveCommand(r.agent, true, r.project.path);
+            // 원격(tmux 유지 모드)이면 tmux 세션에 붙인다 — 세션이 살아 있으면 붙기만 하고
+            // 에이전트를 하나 더 띄우지 않는다
+            command = wrapForPersistence(command, r.project, r.agent.id, sessionId);
             ensureHooks(r.agent.id);
             sendWhenReady(r.terminal, command);
         }
