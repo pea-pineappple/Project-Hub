@@ -20,6 +20,9 @@ const AGENT_ICONS: Record<string, string> = {
  * 첫 글자가 잘려 "laude --continue"처럼 실행되는 문제가 있다.
  * shell integration이 활성화되면 그 시점에 보내고, 끝내 안 오면(cmd.exe 등) 일정 시간 뒤 보낸다.
  */
+/** 이 확장이 이번 실행에서 명령을 보낸 터미널 */
+const delivered = new WeakSet<vscode.Terminal>();
+
 export function sendWhenReady(
     terminal: vscode.Terminal,
     text: string,
@@ -29,6 +32,12 @@ export function sendWhenReady(
 ): void {
     const deliver = async () => {
         if (terminal.exitStatus === undefined && (!stillWanted || (await stillWanted()))) {
+            // 조건부 전송은 다른 명령이 먼저 들어간 터미널에는 보내지 않는다 — 프로세스 조회는
+            // 방금 보낸 명령이 아직 실행되기 전의 상태를 볼 수 있어서 그것만으로는 못 막는다
+            if (stillWanted && delivered.has(terminal)) {
+                return;
+            }
+            delivered.add(terminal);
             terminal.sendText(text, true);
         }
     };
@@ -61,6 +70,12 @@ export class TerminalManager {
      *      `${agentId}@${sessionId}:${normalizedPath}` (세션 지정 터미널 — 같은 에이전트 다중 실행)
      */
     private terminals = new Map<string, vscode.Terminal>();
+    /** 이번 실행에서 직접 만든 터미널 (복원된 터미널과 구분) */
+    private created = new WeakSet<vscode.Terminal>();
+
+    createdThisSession(terminal: vscode.Terminal): boolean {
+        return this.created.has(terminal);
+    }
 
     constructor(
         context: vscode.ExtensionContext,
@@ -341,6 +356,7 @@ export class TerminalManager {
                 iconPath: new vscode.ThemeIcon(AGENT_ICONS[agent.id] ?? 'robot'),
                 location: this.location(project)
             });
+            this.created.add(terminal);
             const command = wrapForPersistence(resolveCommand(agent, resume, project.path), project, agent.id);
             if (command) {
                 sendWhenReady(terminal, command);
@@ -368,6 +384,7 @@ export class TerminalManager {
                 iconPath: new vscode.ThemeIcon(AGENT_ICONS[agent.id] ?? 'robot'),
                 location: this.location(project)
             });
+            this.created.add(terminal);
             sendWhenReady(terminal, wrapForPersistence(command, project, agent.id, sessionId));
             this.terminals.set(this.key(agent.id, project.path, sessionId), terminal);
         }

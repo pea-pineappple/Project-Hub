@@ -1700,7 +1700,11 @@ export function activate(context: vscode.ExtensionContext): void {
         if (!config().get<boolean>('resumeAgentsOnRestart', true)) {
             return;
         }
-        const restored = terminals.namedTerminals(manager.getProjects()).filter(r => r.agent.command);
+        // 이번 실행에서 확장이 만든 터미널(원격 재연결로 tmux에 붙인 터미널 등)은 복원된 셸이 아니다.
+        // 이름이 같아 함께 잡히는데, 여기서 또 명령을 보내면 이미 붙은 에이전트 입력창에 타이핑된다
+        const restored = terminals
+            .namedTerminals(manager.getProjects())
+            .filter(r => r.agent.command && !terminals.createdThisSession(r.terminal));
         if (restored.length === 0) {
             return;
         }
