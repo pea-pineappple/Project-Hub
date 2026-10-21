@@ -148,5 +148,21 @@
   "Ask every time": "매번 묻기",
   "Choose the agent when switching to a project with no open session": "열린 세션이 없는 프로젝트로 전환할 때 에이전트를 선택합니다",
   "Agent to start when a project has no open session": "열린 세션이 없는 프로젝트에서 시작할 에이전트",
-  "Auto-start on switch is off (projectHub.autoStartClaudeOnSwitch). Turn it on to use this.": "전환 시 자동 시작이 꺼져 있습니다 (projectHub.autoStartClaudeOnSwitch). 이 설정을 쓰려면 켜 주세요."
+  "Auto-start on switch is off (projectHub.autoStartClaudeOnSwitch). Turn it on to use this.": "전환 시 자동 시작이 꺼져 있습니다 (projectHub.autoStartClaudeOnSwitch). 이 설정을 쓰려면 켜 주세요.",
+  "Connecting to {0}…": "{0}에 연결하는 중…",
+  "Click: show the agents of these projects together in a grid": "클릭: 이 프로젝트들의 에이전트를 한 그리드에 함께 표시",
+  "Choose projects…": "프로젝트 고르기…",
+  "Only the agents of the projects you check": "체크한 프로젝트의 에이전트만",
+  "Projects to show together": "함께 볼 프로젝트",
+  "Add at least two projects to make a group.": "그룹을 만들려면 프로젝트를 두 개 이상 추가하세요.",
+  "New project group": "새 프로젝트 그룹",
+  "Edit group {0}": "그룹 편집: {0}",
+  "Delete": "삭제",
+  "Delete the group {0}? Its projects and agents are not affected.": "{0} 그룹을 삭제할까요? 그룹에 든 프로젝트와 에이전트는 그대로입니다.",
+  "Check the projects to show together": "함께 볼 프로젝트를 체크하세요",
+  "No project groups yet. Create one with \"Project Hub: New Project Group\".": "프로젝트 그룹이 없습니다. \"Project Hub: 새 프로젝트 그룹…\"으로 만드세요.",
+  "Select a project group": "프로젝트 그룹 선택",
+  "Group name": "그룹 이름",
+  "Enter a name.": "이름을 입력하세요.",
+  "A group with this name already exists.": "같은 이름의 그룹이 이미 있습니다."
 }

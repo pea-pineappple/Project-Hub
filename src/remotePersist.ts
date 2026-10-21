@@ -87,13 +87,13 @@ function tmuxHasSession(name: string): boolean {
  * 에이전트가 끝나도 셸이 남아 오류 메시지를 볼 수 있다.
  * 이미 세션이 살아 있으면 새로 만들지 않고 붙기만 한다 → 재연결 후 돌고 있던 화면으로 복귀.
  */
-export function wrapForPersistence(command: string, project: Project, agentId: string, sessionId?: string): string {
+function ensureSession(command: string, project: Project, agentId: string, sessionId?: string): string | undefined {
     if (!command || !persistEnabled()) {
-        return command;
+        return undefined;
     }
     if (!hasTmux()) {
         showNoTmuxNotice();
-        return command;
+        return undefined;
     }
     const name = tmuxSessionName(project, agentId, sessionId);
     if (!tmuxHasSession(name)) {
@@ -104,11 +104,36 @@ export function wrapForPersistence(command: string, project: Project, agentId: s
             tmux(['send-keys', '-t', name, '-l', command]);
             tmux(['send-keys', '-t', name, 'Enter']);
         } catch {
-            return command;
+            return undefined;
         }
     }
     remember(name, { projectPath: project.path, agentId, sessionId });
-    return `tmux attach-session -t ${quote(`=${name}`)}`;
+    return name;
+}
+
+/**
+ * 에이전트 터미널을 셸 대신 tmux 클라이언트로 바로 띄우는 실행 설정 (createTerminal의 shellPath/shellArgs).
+ * 셸에 attach 명령을 타이핑하지 않으므로, 타이밍이 어긋나 명령이 이미 붙은 에이전트 입력창에
+ * 들어가는 일이 원천적으로 없다. VS Code가 터미널을 복원할 때도 같은 실행 설정으로 다시 띄우므로
+ * 저절로 다시 붙는다. 세션이 그사이 사라졌으면 new-session -A가 프로젝트 폴더에 빈 셸 세션을 연다.
+ * 적용 대상이 아니면(로컬 창·tmux 없음·명령 없는 Terminal 항목) undefined → 호출 측은 명령을 직접 보낸다.
+ */
+export function persistentShell(
+    command: string,
+    project: Project,
+    agentId: string,
+    sessionId?: string
+): { shellPath: string; shellArgs: string[] } | undefined {
+    const name = ensureSession(command, project, agentId, sessionId);
+    return name ? { shellPath: 'tmux', shellArgs: ['new-session', '-A', '-s', name, '-c', project.path] } : undefined;
+}
+
+/**
+ * 이미 떠 있는 셸(이전 버전이 만든 복원 터미널)에 보낼 명령 — tmux 세션에 붙는 명령, 아니면 원래 명령.
+ */
+export function wrapForPersistence(command: string, project: Project, agentId: string, sessionId?: string): string {
+    const name = ensureSession(command, project, agentId, sessionId);
+    return name ? `tmux attach-session -t ${quote(`=${name}`)}` : command;
 }
 
 function remember(name: string, info: TmuxSessionInfo): void {
@@ -120,21 +145,24 @@ function remember(name: string, info: TmuxSessionInfo): void {
     void memento.update(SESSIONS_KEY, map);
 }
 
-/** 원격에서 지금 살아 있는, 이 확장이 만든 tmux 세션들 (재연결 시 자동으로 다시 붙기용) */
+/** 원격에서 살아 있지만 아무 터미널도 붙어 있지 않은, 이 확장이 만든 tmux 세션들 (재연결 시 자동으로 다시 붙기용) */
 export function liveTmuxSessions(): Array<TmuxSessionInfo & { name: string }> {
     if (!persistEnabled() || !memento) {
         return [];
     }
     let names: string[];
     try {
-        names = execFileSync('tmux', ['list-sessions', '-F', '#{session_name}'], {
+        // 붙어 있는 클라이언트가 있는 세션은 제외: 창 리로드는 터미널(tmux 클라이언트)을 그대로 살려 두므로
+        // 그런 세션에 또 붙으면 같은 터미널이 두 개가 된다. 서버 재시작 등으로 클라이언트가 사라진 세션만 대상.
+        names = execFileSync('tmux', ['list-sessions', '-F', '#{session_attached} #{session_name}'], {
             timeout: 3000,
             encoding: 'utf8',
             stdio: ['ignore', 'pipe', 'ignore']
         })
             .split('\n')
-            .map(s => s.trim())
-            .filter(s => s.startsWith(PREFIX));
+            .map(s => s.trim().split(' '))
+            .filter(([attached, name]) => attached === '0' && name?.startsWith(PREFIX))
+            .map(([, name]) => name);
     } catch {
         // tmux 없음 또는 서버 미실행(세션 0개)
         return [];

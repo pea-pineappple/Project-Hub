@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { Project, ProjectStatus, STATUS_LABEL } from './types';
+import { Project, ProjectGroup, ProjectStatus, STATUS_LABEL } from './types';
 import { ProjectManager } from './projectManager';
 import { AvatarStore } from './avatars';
 import { getAgentLabel } from './agents';
@@ -26,7 +26,9 @@ export type HubNode =
     // 다른 PC·서버의 프로젝트 (누르면 그 호스트에 연결된 창을 연다)
     // current: 이 창이 연결된 장비 — 자식이 실제 프로젝트 노드(전환 가능)
     | { kind: 'host'; host: HostEntry; current?: boolean; project?: undefined }
-    | { kind: 'hostProject'; host: HostEntry; project: Project };
+    | { kind: 'hostProject'; host: HostEntry; project: Project }
+    // 프로젝트 그룹 (누르면 그 프로젝트들의 에이전트를 한 그리드로)
+    | { kind: 'group'; group: ProjectGroup; project?: undefined };
 
 /** 트리 컨텍스트 메뉴/명령 인자에서 Project 꺼내기 (루트/자식 노드 모두 지원) */
 export function asProject(arg?: Project | HubNode): Project | undefined {
@@ -37,7 +39,7 @@ export function asProject(arg?: Project | HubNode): Project | undefined {
         return arg;
     }
     // 다른 호스트의 프로젝트는 이 창에서 다룰 수 없다
-    return arg.kind === 'host' || arg.kind === 'hostProject' ? undefined : arg.project;
+    return arg.kind === 'host' || arg.kind === 'hostProject' || arg.kind === 'group' ? undefined : arg.project;
 }
 
 /** 하위 행 클릭이 프로젝트 전환도 하는 설정이면 툴팁에 안내를 덧붙인다 (서비스 뷰와 공용) */
@@ -83,6 +85,25 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<HubNode> {
             item.tooltip = isSsh
                 ? vscode.l10n.t('Projects on SSH server {0} ({1})', node.host.label, node.host.authority?.replace(/^ssh-remote\+/, '') ?? '')
                 : vscode.l10n.t('Projects on local PC {0}', node.host.label);
+            return item;
+        }
+
+        if (node.kind === 'group') {
+            const projects = this.manager.groupProjects(node.group);
+            const item = new vscode.TreeItem(node.group.name, vscode.TreeItemCollapsibleState.None);
+            item.id = `g:${node.group.name}`;
+            item.iconPath = new vscode.ThemeIcon('layout');
+            item.description = projects.map(p => p.name).join(', ');
+            item.contextValue = 'groupRow';
+            item.tooltip =
+                projects.map(p => `• ${p.name}`).join('\n') +
+                '\n\n' +
+                vscode.l10n.t('Click: show the agents of these projects together in a grid');
+            item.command = {
+                command: 'projectHub.openProjectGroup',
+                title: 'Open Project Group',
+                arguments: [node]
+            };
             return item;
         }
 
@@ -346,7 +367,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<HubNode> {
 
     /** treeView.reveal(전환 시 활성 항목 선택)에 필요 */
     getParent(node: HubNode): HubNode | undefined {
-        if (node.kind === 'host') {
+        if (node.kind === 'host' || node.kind === 'group') {
             return undefined;
         }
         if (node.kind === 'project') {
@@ -373,7 +394,9 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<HubNode> {
             // 장비 → 프로젝트: 현재 장비(펼침)를 맨 위에, 다른 PC·서버를 그 아래 같은 계층에
             const me = this.thisHostNode();
             const others = otherHosts().map(host => ({ kind: 'host' as const, host }));
-            return me ? [me, ...others] : [...ownProjects(), ...others];
+            // 그룹은 이 장비의 프로젝트 묶음이라 맨 위에
+            const groups = this.manager.getGroups().map(group => ({ kind: 'group' as const, group }));
+            return me ? [...groups, me, ...others] : [...groups, ...ownProjects(), ...others];
         }
         if (node.kind === 'host') {
             return node.current

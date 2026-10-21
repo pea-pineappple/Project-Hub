@@ -148,5 +148,21 @@
   "Ask every time": "每次询问",
   "Choose the agent when switching to a project with no open session": "切换到没有已打开会话的项目时选择代理",
   "Agent to start when a project has no open session": "项目没有已打开会话时启动的代理",
-  "Auto-start on switch is off (projectHub.autoStartClaudeOnSwitch). Turn it on to use this.": "切换时自动启动已关闭（projectHub.autoStartClaudeOnSwitch）。请开启后使用。"
+  "Auto-start on switch is off (projectHub.autoStartClaudeOnSwitch). Turn it on to use this.": "切换时自动启动已关闭（projectHub.autoStartClaudeOnSwitch）。请开启后使用。",
+  "Connecting to {0}…": "正在连接 {0}…",
+  "Click: show the agents of these projects together in a grid": "单击：在一个网格中同时显示这些项目的代理",
+  "Choose projects…": "选择项目…",
+  "Only the agents of the projects you check": "仅显示勾选项目的代理",
+  "Projects to show together": "要一起显示的项目",
+  "Add at least two projects to make a group.": "至少添加两个项目才能创建组。",
+  "New project group": "新建项目组",
+  "Edit group {0}": "编辑组：{0}",
+  "Delete": "删除",
+  "Delete the group {0}? Its projects and agents are not affected.": "删除组 {0}？其中的项目和代理不受影响。",
+  "Check the projects to show together": "勾选要一起显示的项目",
+  "No project groups yet. Create one with \"Project Hub: New Project Group\".": "还没有项目组。请用“Project Hub: 新建项目组…”创建。",
+  "Select a project group": "选择项目组",
+  "Group name": "组名",
+  "Enter a name.": "请输入名称。",
+  "A group with this name already exists.": "已存在同名的组。"
 }

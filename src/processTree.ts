@@ -299,7 +299,17 @@ const PASSTHROUGH = new Set([
 
 /** tmux 클라이언트(`tmux attach-session -t =ph-…`)가 붙은 세션 이름 */
 function tmuxAttachTarget(command: string): string | undefined {
-    return /\btmux\b.*\battach(?:-session)?\s+-t\s+'?=?([^'\s]+)/.exec(command)?.[1];
+    return (
+        /\btmux\b.*\battach(?:-session)?\s+-t\s+'?=?([^'\s]+)/.exec(command)?.[1] ??
+        // 터미널을 tmux 클라이언트로 바로 띄운 경우: tmux new-session -A -s <이름>
+        /\btmux\b.*\bnew-session\b.*\s-A\b.*\s-s\s+(\S+)/.exec(command)?.[1]
+    );
+}
+
+/** 프로세스 이름 (조회 실패 시 undefined) */
+export async function processName(pid: number): Promise<string | undefined> {
+    const snap = await snapshot();
+    return snap.procs.find(p => p.ProcessId === pid)?.Name ?? undefined;
 }
 
 /** 명령줄에서 표시용 라벨 추출 */
@@ -353,6 +363,13 @@ export async function getBackgroundProcesses(rootPids: number[], showAll = false
         byParent.set(p.ParentProcessId, list);
     }
     const all: BgProcess[] = [];
+    // 터미널 프로세스 자체가 tmux 클라이언트면 그 세션의 패널 셸들이 실제 루트
+    const byPid = new Map(snap.procs.map(p => [p.ProcessId, p]));
+    rootPids = rootPids.flatMap(pid => {
+        const root = byPid.get(pid);
+        const target = root && (root.Name ?? '').startsWith('tmux') ? tmuxAttachTarget(root.CommandLine ?? '') : undefined;
+        return target ? snap.tmuxPanes?.get(target) ?? [] : [pid];
+    });
     const seen = new Set<number>(rootPids);
     const queue: Array<{ pid: number; depth: number }> = rootPids.map(pid => ({ pid, depth: 0 }));
     while (queue.length) {
