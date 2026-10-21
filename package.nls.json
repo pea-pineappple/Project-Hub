@@ -57,5 +57,9 @@
   "cmd.selectDefaultAgent": "Project Hub: Select Default Agent",
   "cfg.autoStartAgent": "What to start when switching to a project with no open agent terminal (requires projectHub.autoStartClaudeOnSwitch).",
   "cfg.autoStartAgent.default": "Start projectHub.defaultAgent automatically.",
-  "cfg.autoStartAgent.ask": "Ask which agent to start every time."
+  "cfg.autoStartAgent.ask": "Ask which agent to start every time.",
+  "cmd.createProjectGroup": "New Project Group…",
+  "cmd.openProjectGroup": "Show Project Group in Grid",
+  "cmd.editProjectGroup": "Edit Project Group",
+  "cmd.deleteProjectGroup": "Delete Project Group"
 }

@@ -2,7 +2,7 @@
   "name": "projecthub",
   "displayName": "Project Hub — Multi-Project & Agent Workspace",
   "description": "%ext.description%",
-  "version": "0.21.2",
+  "version": "0.22.0",
   "l10n": "./l10n",
   "publisher": "PecuniaEstAI",
   "private": true,
@@ -184,6 +184,26 @@
         "icon": "$(split-horizontal)"
       },
       {
+        "command": "projectHub.createProjectGroup",
+        "title": "%cmd.createProjectGroup%",
+        "icon": "$(new-folder)"
+      },
+      {
+        "command": "projectHub.openProjectGroup",
+        "title": "%cmd.openProjectGroup%",
+        "icon": "$(layout)"
+      },
+      {
+        "command": "projectHub.editProjectGroup",
+        "title": "%cmd.editProjectGroup%",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "projectHub.deleteProjectGroup",
+        "title": "%cmd.deleteProjectGroup%",
+        "icon": "$(trash)"
+      },
+      {
         "command": "projectHub.adoptTerminal",
         "title": "%cmd.adoptTerminal%",
         "icon": "$(plug)"
@@ -252,6 +272,11 @@
           "command": "projectHub.clearBriefing",
           "when": "view == projectHub.briefing",
           "group": "navigation@1"
+        },
+        {
+          "command": "projectHub.createProjectGroup",
+          "when": "view == projectHub.projects",
+          "group": "2_groups@1"
         }
       ],
       "view/item/context": [
@@ -389,6 +414,26 @@
           "command": "projectHub.copyFilePath",
           "when": "view == projectHub.projects && (viewItem == fileRow || viewItem == dirRow)",
           "group": "1_actions@2"
+        },
+        {
+          "command": "projectHub.editProjectGroup",
+          "when": "view == projectHub.projects && viewItem == groupRow",
+          "group": "inline@1"
+        },
+        {
+          "command": "projectHub.deleteProjectGroup",
+          "when": "view == projectHub.projects && viewItem == groupRow",
+          "group": "inline@2"
+        },
+        {
+          "command": "projectHub.editProjectGroup",
+          "when": "view == projectHub.projects && viewItem == groupRow",
+          "group": "1_actions@1"
+        },
+        {
+          "command": "projectHub.deleteProjectGroup",
+          "when": "view == projectHub.projects && viewItem == groupRow",
+          "group": "9_remove@1"
         }
       ],
       "terminal/context": [

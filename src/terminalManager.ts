@@ -3,7 +3,7 @@ import { Project } from './types';
 import { normalizePath, isWithin } from './paths';
 import { AgentDef, getAgents, getDefaultAgent, resolveCommand, resolveSessionCommand } from './agents';
 import { sessionTag } from './sessionLabels';
-import { wrapForPersistence } from './remotePersist';
+import { persistentShell } from './remotePersist';
 
 const AGENT_ICONS: Record<string, string> = {
     claude: 'sparkle',
@@ -350,15 +350,17 @@ export class TerminalManager {
     open(project: Project, agent: AgentDef, resume = false, focus = true): void {
         let terminal = this.getManaged(project, agent.id);
         if (!terminal) {
+            const command = resolveCommand(agent, resume, project.path);
+            const tmuxShell = persistentShell(command, project, agent.id);
             terminal = vscode.window.createTerminal({
                 name: this.terminalName(agent.id, project),
                 cwd: project.path,
                 iconPath: new vscode.ThemeIcon(AGENT_ICONS[agent.id] ?? 'robot'),
-                location: this.location(project)
+                location: this.location(project),
+                ...tmuxShell
             });
             this.created.add(terminal);
-            const command = wrapForPersistence(resolveCommand(agent, resume, project.path), project, agent.id);
-            if (command) {
+            if (command && !tmuxShell) {
                 sendWhenReady(terminal, command);
             }
             this.terminals.set(this.key(agent.id, project.path), terminal);
@@ -378,14 +380,18 @@ export class TerminalManager {
         }
         let terminal = this.getManaged(project, agent.id, sessionId);
         if (!terminal) {
+            const tmuxShell = persistentShell(command, project, agent.id, sessionId);
             terminal = vscode.window.createTerminal({
                 name: this.terminalName(agent.id, project, sessionId),
                 cwd: project.path,
                 iconPath: new vscode.ThemeIcon(AGENT_ICONS[agent.id] ?? 'robot'),
-                location: this.location(project)
+                location: this.location(project),
+                ...tmuxShell
             });
             this.created.add(terminal);
-            sendWhenReady(terminal, wrapForPersistence(command, project, agent.id, sessionId));
+            if (!tmuxShell) {
+                sendWhenReady(terminal, command);
+            }
             this.terminals.set(this.key(agent.id, project.path, sessionId), terminal);
         }
         terminal.show(!focus);

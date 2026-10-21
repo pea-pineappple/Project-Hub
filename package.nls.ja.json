@@ -57,5 +57,9 @@
   "cmd.selectDefaultAgent": "Project Hub: 既定のエージェントを選択",
   "cfg.autoStartAgent": "開いているエージェントターミナルがないプロジェクトに切り替えたときに起動するもの (projectHub.autoStartClaudeOnSwitch が有効な場合)。",
   "cfg.autoStartAgent.default": "projectHub.defaultAgent を自動起動します。",
-  "cfg.autoStartAgent.ask": "起動するエージェントを毎回確認します。"
+  "cfg.autoStartAgent.ask": "起動するエージェントを毎回確認します。",
+  "cmd.createProjectGroup": "新しいプロジェクトグループ…",
+  "cmd.openProjectGroup": "プロジェクトグループをグリッドで表示",
+  "cmd.editProjectGroup": "プロジェクトグループを編集",
+  "cmd.deleteProjectGroup": "プロジェクトグループを削除"
 }

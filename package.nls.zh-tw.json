@@ -57,5 +57,9 @@
   "cmd.selectDefaultAgent": "Project Hub: 選擇預設代理",
   "cfg.autoStartAgent": "切換到沒有已開啟代理終端機的專案時啟動什麼（需開啟 projectHub.autoStartClaudeOnSwitch）。",
   "cfg.autoStartAgent.default": "自動啟動 projectHub.defaultAgent。",
-  "cfg.autoStartAgent.ask": "每次詢問要啟動的代理。"
+  "cfg.autoStartAgent.ask": "每次詢問要啟動的代理。",
+  "cmd.createProjectGroup": "新增專案群組…",
+  "cmd.openProjectGroup": "以格狀顯示專案群組",
+  "cmd.editProjectGroup": "編輯專案群組",
+  "cmd.deleteProjectGroup": "刪除專案群組"
 }

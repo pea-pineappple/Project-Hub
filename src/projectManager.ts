@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
-import { AgentSessionStatus, Project, ProjectStatus } from './types';
+import { AgentSessionStatus, Project, ProjectGroup, ProjectStatus } from './types';
 import { normalizePath, samePath, isWithin } from './paths';
 
 const STORE_KEY = 'projectHub.projects';
@@ -93,9 +93,54 @@ export class ProjectManager {
         return this.context.globalState.get<Project[]>(backupKey(), []).filter(p => isNativePath(p.path));
     }
 
-    private writeProjectsFile(projects: Project[]): void {
+    private readProjectsFile(): { projects?: unknown; groups?: unknown } | undefined {
+        try {
+            return fs.existsSync(PROJECTS_FILE) ? JSON.parse(fs.readFileSync(PROJECTS_FILE, 'utf8')) : undefined;
+        } catch {
+            return undefined;
+        }
+    }
+
+    /** 프로젝트·그룹 중 바꾸지 않는 쪽은 파일의 기존 값을 그대로 둔다 */
+    private writeProjectsFile(projects: Project[], groups: ProjectGroup[] = this.storedGroups()): void {
         fs.mkdirSync(path.dirname(PROJECTS_FILE), { recursive: true });
-        fs.writeFileSync(PROJECTS_FILE, JSON.stringify({ projects }, null, 2) + '\n');
+        const data = groups.length ? { projects, groups } : { projects };
+        fs.writeFileSync(PROJECTS_FILE, JSON.stringify(data, null, 2) + '\n');
+    }
+
+    private storedGroups(): ProjectGroup[] {
+        const groups = this.readProjectsFile()?.groups;
+        return Array.isArray(groups)
+            ? groups.filter((g): g is ProjectGroup => !!g && typeof g.name === 'string' && Array.isArray(g.paths))
+            : [];
+    }
+
+    /** 프로젝트 그룹 (목록에서 빠진 프로젝트는 제외, 남은 프로젝트가 없는 그룹도 제외) */
+    getGroups(): ProjectGroup[] {
+        const projects = this.getProjects();
+        return this.storedGroups()
+            .map(g => ({ name: g.name, paths: g.paths.filter(p => projects.some(prj => samePath(prj.path, p))) }))
+            .filter(g => g.paths.length > 0);
+    }
+
+    groupProjects(group: ProjectGroup): Project[] {
+        return group.paths.map(p => this.findByPath(p)).filter((p): p is Project => !!p);
+    }
+
+    /** 같은 이름이면 교체(previousName을 주면 그 그룹을 바꾼다 — 이름 변경 포함) */
+    async saveGroup(group: ProjectGroup, previousName?: string): Promise<void> {
+        const replaced = previousName ?? group.name;
+        const groups = this.storedGroups();
+        const i = groups.findIndex(g => g.name === replaced);
+        const next = groups.filter(g => g.name !== replaced && g.name !== group.name);
+        next.splice(i < 0 ? next.length : Math.min(i, next.length), 0, group);
+        this.writeProjectsFile(this.getProjects(), next);
+        this._onDidChange.fire();
+    }
+
+    async removeGroup(name: string): Promise<void> {
+        this.writeProjectsFile(this.getProjects(), this.storedGroups().filter(g => g.name !== name));
+        this._onDidChange.fire();
     }
 
     private async saveProjects(projects: Project[]): Promise<void> {

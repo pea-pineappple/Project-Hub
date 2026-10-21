@@ -148,5 +148,21 @@
   "Ask every time": "每次詢問",
   "Choose the agent when switching to a project with no open session": "切換到沒有已開啟工作階段的專案時選擇代理",
   "Agent to start when a project has no open session": "專案沒有已開啟工作階段時啟動的代理",
-  "Auto-start on switch is off (projectHub.autoStartClaudeOnSwitch). Turn it on to use this.": "切換時自動啟動已關閉（projectHub.autoStartClaudeOnSwitch）。請開啟後使用。"
+  "Auto-start on switch is off (projectHub.autoStartClaudeOnSwitch). Turn it on to use this.": "切換時自動啟動已關閉（projectHub.autoStartClaudeOnSwitch）。請開啟後使用。",
+  "Connecting to {0}…": "正在連線 {0}…",
+  "Click: show the agents of these projects together in a grid": "按一下：在一個格狀版面中同時顯示這些專案的代理",
+  "Choose projects…": "選擇專案…",
+  "Only the agents of the projects you check": "僅顯示勾選專案的代理",
+  "Projects to show together": "要一起顯示的專案",
+  "Add at least two projects to make a group.": "至少新增兩個專案才能建立群組。",
+  "New project group": "新增專案群組",
+  "Edit group {0}": "編輯群組：{0}",
+  "Delete": "刪除",
+  "Delete the group {0}? Its projects and agents are not affected.": "刪除群組 {0}？其中的專案與代理不受影響。",
+  "Check the projects to show together": "勾選要一起顯示的專案",
+  "No project groups yet. Create one with \"Project Hub: New Project Group\".": "尚無專案群組。請用「Project Hub: 新增專案群組…」建立。",
+  "Select a project group": "選擇專案群組",
+  "Group name": "群組名稱",
+  "Enter a name.": "請輸入名稱。",
+  "A group with this name already exists.": "已有同名的群組。"
 }

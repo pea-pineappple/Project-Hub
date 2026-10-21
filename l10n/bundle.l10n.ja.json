@@ -148,5 +148,21 @@
   "Ask every time": "毎回確認する",
   "Choose the agent when switching to a project with no open session": "セッションのないプロジェクトに切り替えたときにエージェントを選択します",
   "Agent to start when a project has no open session": "セッションのないプロジェクトで起動するエージェント",
-  "Auto-start on switch is off (projectHub.autoStartClaudeOnSwitch). Turn it on to use this.": "切り替え時の自動起動がオフです (projectHub.autoStartClaudeOnSwitch)。使用するにはオンにしてください。"
+  "Auto-start on switch is off (projectHub.autoStartClaudeOnSwitch). Turn it on to use this.": "切り替え時の自動起動がオフです (projectHub.autoStartClaudeOnSwitch)。使用するにはオンにしてください。",
+  "Connecting to {0}…": "{0} に接続中…",
+  "Click: show the agents of these projects together in a grid": "クリック: これらのプロジェクトのエージェントを1つのグリッドにまとめて表示",
+  "Choose projects…": "プロジェクトを選択…",
+  "Only the agents of the projects you check": "チェックしたプロジェクトのエージェントのみ",
+  "Projects to show together": "一緒に表示するプロジェクト",
+  "Add at least two projects to make a group.": "グループを作るにはプロジェクトを2つ以上追加してください。",
+  "New project group": "新しいプロジェクトグループ",
+  "Edit group {0}": "グループを編集: {0}",
+  "Delete": "削除",
+  "Delete the group {0}? Its projects and agents are not affected.": "グループ {0} を削除しますか？プロジェクトとエージェントには影響しません。",
+  "Check the projects to show together": "一緒に表示するプロジェクトをチェックしてください",
+  "No project groups yet. Create one with \"Project Hub: New Project Group\".": "プロジェクトグループがありません。「Project Hub: 新しいプロジェクトグループ…」で作成してください。",
+  "Select a project group": "プロジェクトグループを選択",
+  "Group name": "グループ名",
+  "Enter a name.": "名前を入力してください。",
+  "A group with this name already exists.": "同じ名前のグループが既にあります。"
 }

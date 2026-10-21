@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { Project, STATUS_LABEL } from './types';
+import { Project, ProjectGroup, STATUS_LABEL } from './types';
 import { ProjectManager, getHubWorkspaceFile, isHubWindow } from './projectManager';
 import { EditorStateStore } from './editorState';
 import { samePath } from './paths';
@@ -29,7 +29,7 @@ import {
 import { listClaudeSessions, hasClaudeSession, claudeSessionPreview } from './claudeSessions';
 import { initSessionLabels, sessionLabel, sessionTag, setSessionLabel, sanitizeLabel } from './sessionLabels';
 import { getServiceCommand, setServiceCommand } from './serviceCommands';
-import { hasRunningChild, invalidateProcessCache, processStartTime, killProcessTree, serviceUrl, webPorts } from './processTree';
+import { hasRunningChild, invalidateProcessCache, processName, processStartTime, killProcessTree, serviceUrl, webPorts } from './processTree';
 import { ServiceNode, ServiceProjectNode, ServicesTreeProvider } from './servicesTree';
 import { BriefingEntry, BriefingStore } from './briefing';
 import { BriefingViewProvider } from './briefingView';
@@ -283,6 +283,14 @@ export function activate(context: vscode.ExtensionContext): void {
 
     /** 프로젝트 그리드 모드면 새로 연 터미널까지 포함해 활성 프로젝트 그리드를 다시 짠다 */
     function afterTerminalOpened(project: Project): void {
+        if (multiGrid) {
+            // 여러 프로젝트 그리드가 떠 있으면 활성 프로젝트 기준으로 다시 짜지 않는다 (그리드가 풀리므로).
+            // 그리드에 든 프로젝트의 터미널이면 그 그리드에 넣어 다시 짠다
+            if (multiGrid.paths.some(p => samePath(p, project.path))) {
+                void showProjectsGrid(multiGrid.paths.map(p => manager.findByPath(p)).filter((p): p is Project => !!p));
+            }
+            return;
+        }
         if (projectGridMode() && manager.isActive(project)) {
             void regridProject(project);
         }
@@ -294,6 +302,11 @@ export function activate(context: vscode.ExtensionContext): void {
     // 이전 프로젝트 터미널은 패널로 되돌리고 새 프로젝트 터미널로 재구성.
     // "전체 프로젝트" 그리드는 여러 프로젝트를 동시에 보는 목적이므로 전환해도 유지.
     let activeGrid: { projectPath: string; terminals: vscode.Terminal[] } | undefined;
+    /**
+     * 고른 프로젝트들(선택·그룹)의 그리드가 떠 있는 동안 그 프로젝트 경로들.
+     * 이때는 터미널을 열어도 활성 프로젝트 그리드로 다시 짜지 않고, 사용자가 프로젝트를 직접 전환하면 풀린다.
+     */
+    let multiGrid: { paths: string[] } | undefined;
     const gridPause = () => new Promise(resolve => setTimeout(resolve, 150));
 
     /**
@@ -415,6 +428,44 @@ export function activate(context: vscode.ExtensionContext): void {
             }
             await arrangeGrid(incoming.map(t => [t]));
             activeGrid = { projectPath: project.path, terminals: incoming };
+        }).catch(() => {
+            /* 배치 실패는 무시 — 터미널은 그대로 살아 있다 */
+        });
+        return regridding;
+    }
+
+    /**
+     * 고른 프로젝트들의 에이전트만 한 그리드에 띄운다 (다른 프로젝트 터미널은 패널로).
+     * 에이전트가 없는 프로젝트는 기본 에이전트를 띄운다 — 자동 시작(autoStartClaudeOnSwitch)이 꺼져 있으면 건너뜀.
+     * 에이전트가 6개 이하면 에이전트마다 한 칸, 넘으면 프로젝트마다 한 칸(그 안에 탭).
+     */
+    function showProjectsGrid(projects: Project[]): Promise<void> {
+        regridding = regridding.then(async () => {
+            if (config().get<boolean>('autoStartClaudeOnSwitch', true)) {
+                const agent = getDefaultAgent();
+                for (const p of projects) {
+                    if (terminals.allLiveTerminals([p]).length === 0) {
+                        ensureHooks(agent.id);
+                        terminals.open(p, agent, canVerifySessions(agent), false);
+                    }
+                }
+            }
+            // 중첩된 프로젝트는 같은 터미널이 양쪽에 잡힐 수 있어 한 번만
+            const seen = new Set<vscode.Terminal>();
+            const perProject = projects
+                .map(p => terminals.allLiveTerminals([p]).filter(t => !seen.has(t) && (seen.add(t), true)))
+                .filter(c => c.length > 0);
+            const all = perProject.flat();
+            if (all.length === 0) {
+                vscode.window.showInformationMessage(vscode.l10n.t('No live agent terminals.'));
+                return;
+            }
+            if (projectGridMode()) {
+                await moveAllEditorTerminalsToPanel();
+            }
+            await arrangeGrid(all.length <= 6 ? all.map(t => [t]) : perProject);
+            multiGrid = { paths: projects.map(p => p.path) };
+            activeGrid = undefined;
         }).catch(() => {
             /* 배치 실패는 무시 — 터미널은 그대로 살아 있다 */
         });
@@ -546,6 +597,9 @@ export function activate(context: vscode.ExtensionContext): void {
         if (restoreEditors && outgoingPath && !isSameTarget) {
             await editors.closeTabs(outgoingPath);
             await editors.restore(project.path);
+        }
+        if (!isSameTarget) {
+            multiGrid = undefined;
         }
         if (projectGridMode()) {
             if (!isSameTarget) {
@@ -874,14 +928,29 @@ export function activate(context: vscode.ExtensionContext): void {
         }),
 
         vscode.commands.registerCommand('projectHub.openOnHost', async (host: HostEntry, project: Project) => {
-            // 키 인증이 안 되는 SSH 서버면 창을 열기 전에 키 설정을 권한다 (비밀번호 반복 입력 방지)
-            if (host.kind === 'ssh' && host.authority) {
-                const target = host.authority.replace(/^ssh-remote\+/, '');
-                if (!(await offerKeySetupBeforeOpen(target))) {
-                    return;
-                }
+            // 키 인증 확인(ssh 접속 시도)이 몇 초 걸리는 동안 아무 반응이 없어 다시 누르면
+            // 창 열기가 두 번 실행돼 새 창이 두 개 뜬다 → 진행 중이거나 방금 연 호스트는 무시
+            if (openingHosts.has(host.key)) {
+                return;
             }
-            await openOnHost(host, project);
+            openingHosts.add(host.key);
+            try {
+                // 키 인증이 안 되는 SSH 서버면 창을 열기 전에 키 설정을 권한다 (비밀번호 반복 입력 방지)
+                if (host.kind === 'ssh' && host.authority) {
+                    const target = host.authority.replace(/^ssh-remote\+/, '');
+                    const proceed = await vscode.window.withProgress(
+                        { location: vscode.ProgressLocation.Window, title: vscode.l10n.t('Connecting to {0}…', host.label) },
+                        () => offerKeySetupBeforeOpen(target)
+                    );
+                    if (!proceed) {
+                        return;
+                    }
+                }
+                await openOnHost(host, project);
+            } finally {
+                // 새 창이 뜨기까지의 시간 동안도 중복 클릭을 막는다
+                setTimeout(() => openingHosts.delete(host.key), 5000);
+            }
         }),
 
         vscode.commands.registerCommand('projectHub.setupSshKey', (node?: HubNode) =>
@@ -1376,37 +1445,73 @@ export function activate(context: vscode.ExtensionContext): void {
         }),
 
         vscode.commands.registerCommand('projectHub.arrangeTerminalGrid', async () => {
-            const all = terminals.allLiveTerminals(manager.getProjects());
-            if (all.length === 0) {
-                vscode.window.showInformationMessage(vscode.l10n.t('No live agent terminals.'));
-                return;
-            }
-            // 범위 선택: 활성 프로젝트만 vs 전체 (활성 밖 터미널이 없으면 바로 진행)
+            const projects = manager.getProjects();
+            const all = terminals.allLiveTerminals(projects);
+            // 범위 선택: 전체 / 활성 프로젝트만 / 프로젝트 고르기 / 저장한 그룹 (고를 게 전체뿐이면 바로 진행)
             const activePath = manager.getActivePath();
             const activeProject = activePath ? manager.findByPath(activePath) : undefined;
             const activeTerms = activeProject ? terminals.allLiveTerminals([activeProject]) : [];
-            let terms = all;
-            if (activeProject && activeTerms.length > 0 && activeTerms.length < all.length) {
-                const pick = await vscode.window.showQuickPick(
-                    [
-                        {
-                            label: `$(multiple-windows) ${vscode.l10n.t('All projects')}`,
-                            description: vscode.l10n.t('{0} terminal(s)', all.length),
-                            scope: 'all' as const
-                        },
-                        {
-                            label: `$(target) ${vscode.l10n.t('Active project only — {0}', activeProject.name)}`,
-                            description: vscode.l10n.t('{0} terminal(s)', activeTerms.length),
-                            scope: 'active' as const
-                        }
-                    ],
-                    { placeHolder: vscode.l10n.t('Choose the scope to arrange in a grid') }
-                );
-                if (!pick) {
-                    return;
-                }
-                terms = pick.scope === 'active' ? activeTerms : all;
+            type ScopeItem = vscode.QuickPickItem & { scope: 'all' | 'active' | 'pick' | 'group'; group?: ProjectGroup };
+            const items: ScopeItem[] = [];
+            if (all.length > 0) {
+                items.push({
+                    label: `$(multiple-windows) ${vscode.l10n.t('All projects')}`,
+                    description: vscode.l10n.t('{0} terminal(s)', all.length),
+                    scope: 'all'
+                });
             }
+            if (activeProject && activeTerms.length > 0 && activeTerms.length < all.length) {
+                items.push({
+                    label: `$(target) ${vscode.l10n.t('Active project only — {0}', activeProject.name)}`,
+                    description: vscode.l10n.t('{0} terminal(s)', activeTerms.length),
+                    scope: 'active'
+                });
+            }
+            if (projects.length >= 2) {
+                items.push({
+                    label: `$(checklist) ${vscode.l10n.t('Choose projects…')}`,
+                    description: vscode.l10n.t('Only the agents of the projects you check'),
+                    scope: 'pick'
+                });
+            }
+            for (const group of manager.getGroups()) {
+                items.push({
+                    label: `$(layout) ${group.name}`,
+                    description: manager.groupProjects(group).map(p => p.name).join(', '),
+                    scope: 'group',
+                    group
+                });
+            }
+            if (items.length === 0) {
+                vscode.window.showInformationMessage(vscode.l10n.t('No live agent terminals.'));
+                return;
+            }
+            const pick =
+                items.length === 1
+                    ? items[0]
+                    : await vscode.window.showQuickPick(items, {
+                          placeHolder: vscode.l10n.t('Choose the scope to arrange in a grid')
+                      });
+            if (!pick) {
+                return;
+            }
+            if (pick.scope === 'pick') {
+                const picked = await pickProjects(
+                    vscode.l10n.t('Projects to show together'),
+                    context.workspaceState.get<string[]>(LAST_GRID_PICK_KEY, [])
+                );
+                if (picked) {
+                    await context.workspaceState.update(LAST_GRID_PICK_KEY, picked.map(p => p.path));
+                    await showProjectsGrid(picked);
+                }
+                return;
+            }
+            if (pick.scope === 'group') {
+                await showProjectsGrid(manager.groupProjects(pick.group!));
+                return;
+            }
+            multiGrid = undefined;
+            const terms = pick.scope === 'active' ? activeTerms : all;
             if (terms.length === 1) {
                 terms[0].show();
                 return;
@@ -1431,6 +1536,62 @@ export function activate(context: vscode.ExtensionContext): void {
             const isActiveOnly =
                 !!activeProject && activeTerms.length > 0 && terms.every(t => activeTerms.includes(t));
             activeGrid = isActiveOnly ? { projectPath: activeProject!.path, terminals: terms } : undefined;
+        }),
+
+        vscode.commands.registerCommand('projectHub.openProjectGroup', async (node?: HubNode) => {
+            const group = node?.kind === 'group' ? node.group : await pickGroup();
+            if (group) {
+                await showProjectsGrid(manager.groupProjects(group));
+            }
+        }),
+
+        vscode.commands.registerCommand('projectHub.createProjectGroup', async () => {
+            if (manager.getProjects().length < 2) {
+                vscode.window.showInformationMessage(vscode.l10n.t('Add at least two projects to make a group.'));
+                return;
+            }
+            const picked = await pickProjects(vscode.l10n.t('New project group'), []);
+            if (!picked) {
+                return;
+            }
+            const name = await askGroupName(picked.map(p => p.name).join(' + '));
+            if (!name) {
+                return;
+            }
+            await manager.saveGroup({ name, paths: picked.map(p => p.path) });
+            await showProjectsGrid(picked);
+        }),
+
+        vscode.commands.registerCommand('projectHub.editProjectGroup', async (node?: HubNode) => {
+            const group = node?.kind === 'group' ? node.group : await pickGroup();
+            if (!group) {
+                return;
+            }
+            const picked = await pickProjects(vscode.l10n.t('Edit group {0}', group.name), group.paths);
+            if (!picked) {
+                return;
+            }
+            const name = await askGroupName(group.name, group.name);
+            if (!name) {
+                return;
+            }
+            await manager.saveGroup({ name, paths: picked.map(p => p.path) }, group.name);
+        }),
+
+        vscode.commands.registerCommand('projectHub.deleteProjectGroup', async (node?: HubNode) => {
+            const group = node?.kind === 'group' ? node.group : await pickGroup();
+            if (!group) {
+                return;
+            }
+            const deleteLabel = vscode.l10n.t('Delete');
+            const answer = await vscode.window.showWarningMessage(
+                vscode.l10n.t('Delete the group {0}? Its projects and agents are not affected.', group.name),
+                { modal: true },
+                deleteLabel
+            );
+            if (answer === deleteLabel) {
+                await manager.removeGroup(group.name);
+            }
         }),
 
         vscode.commands.registerCommand('projectHub.sendInstruction', async (node?: Project | HubNode) => {
@@ -1718,6 +1879,10 @@ export function activate(context: vscode.ExtensionContext): void {
             if (!pid) {
                 continue;
             }
+            // tmux 클라이언트로 바로 띄운 터미널은 VS Code가 복원하면서 저절로 다시 붙는다 — 보낼 것이 없다
+            if ((await processName(pid))?.startsWith('tmux')) {
+                continue;
+            }
             const started = await processStartTime(pid);
             if (started === undefined || started < hostStart - 60_000) {
                 continue;
@@ -1751,8 +1916,16 @@ export function activate(context: vscode.ExtensionContext): void {
     // 원격 서버가 재시작돼 터미널이 사라져도 tmux 세션(에이전트)은 살아 있다.
     // 살아 있는 우리 세션마다 관리 터미널이 없으면 열어서 붙는다
     // (open/openSession이 보내는 tmux new-session -A 가 기존 세션에 attach).
-    function reattachTmuxSessions(): void {
-        for (const s of liveTmuxSessions()) {
+    async function reattachTmuxSessions(): Promise<void> {
+        const detached = liveTmuxSessions();
+        if (detached.length === 0) {
+            return;
+        }
+        // VS Code를 다시 켜면 복원 터미널이 같은 tmux 실행 설정으로 조금 늦게 다시 붙는다.
+        // 그보다 먼저 새로 열면 중복되므로 잠시 기다렸다가 여전히 아무도 안 붙은 세션만 연다.
+        await new Promise(r => setTimeout(r, 3000 * LATENCY));
+        const still = new Set(liveTmuxSessions().map(s => s.name));
+        for (const s of detached.filter(d => still.has(d.name))) {
             const project = manager.findByPath(s.projectPath);
             const agent = project ? getAgent(s.agentId) : undefined;
             if (!project || !agent) {
@@ -1767,6 +1940,75 @@ export function activate(context: vscode.ExtensionContext): void {
             }
         }
     }
+
+    // ── 프로젝트 그룹·선택 ─────────────────────────────────────────
+    /** 그리드 범위에서 마지막으로 고른 프로젝트들 (다음에 미리 체크) — 장비마다 다르므로 workspaceState */
+    const LAST_GRID_PICK_KEY = 'projectHub.lastGridProjects';
+
+    /** 프로젝트 여러 개 고르기 (목록 순서대로 반환, 하나도 안 고르면 undefined) */
+    async function pickProjects(title: string, preselect: string[]): Promise<Project[] | undefined> {
+        const qp = vscode.window.createQuickPick<vscode.QuickPickItem & { project: Project }>();
+        qp.title = title;
+        qp.placeholder = vscode.l10n.t('Check the projects to show together');
+        qp.canSelectMany = true;
+        qp.items = manager.getProjects().map(project => {
+            const live = terminals.allLiveTerminals([project]).length;
+            return {
+                label: project.name,
+                description: live > 0 ? vscode.l10n.t('{0} terminal(s)', live) : undefined,
+                project
+            };
+        });
+        qp.selectedItems = qp.items.filter(i => preselect.some(p => samePath(p, i.project.path)));
+        const accepted = await new Promise<boolean>(resolve => {
+            qp.onDidAccept(() => resolve(true));
+            qp.onDidHide(() => resolve(false));
+            qp.show();
+        });
+        const picked = accepted ? qp.items.filter(i => qp.selectedItems.includes(i)).map(i => i.project) : [];
+        qp.dispose();
+        return picked.length > 0 ? picked : undefined;
+    }
+
+    async function pickGroup(): Promise<ProjectGroup | undefined> {
+        const groups = manager.getGroups();
+        if (groups.length === 0) {
+            vscode.window.showInformationMessage(
+                vscode.l10n.t('No project groups yet. Create one with "Project Hub: New Project Group".')
+            );
+            return undefined;
+        }
+        const pick = await vscode.window.showQuickPick(
+            groups.map(group => ({
+                label: `$(layout) ${group.name}`,
+                description: manager.groupProjects(group).map(p => p.name).join(', '),
+                group
+            })),
+            { placeHolder: vscode.l10n.t('Select a project group') }
+        );
+        return pick?.group;
+    }
+
+    function askGroupName(value: string, current?: string): Thenable<string | undefined> {
+        return vscode.window
+            .showInputBox({
+                prompt: vscode.l10n.t('Group name'),
+                value,
+                validateInput: v => {
+                    const name = v.trim();
+                    if (!name) {
+                        return vscode.l10n.t('Enter a name.');
+                    }
+                    return name !== current && manager.getGroups().some(g => g.name === name)
+                        ? vscode.l10n.t('A group with this name already exists.')
+                        : undefined;
+                }
+            })
+            .then(v => v?.trim());
+    }
+
+    /** 창을 여는 중인 호스트 (중복 클릭 방지) */
+    const openingHosts = new Set<string>();
 
     // ── 다른 창에서 요청한 전환 ────────────────────────────────────
     // 다른 PC·서버 목록의 프로젝트를 누르면 그 호스트의 창을 열면서 전환 요청을 남긴다.
@@ -1791,7 +2033,7 @@ export function activate(context: vscode.ExtensionContext): void {
     // 복원된 셸이 프롬프트를 띄울 시간을 준 뒤 확인하고, 그리드 모드면 활성 프로젝트 그리드 구성
     setTimeout(async () => {
         await applyPendingSwitch();
-        reattachTmuxSessions();
+        await reattachTmuxSessions();
         await reviveRestoredAgents();
         const activePath = manager.getActivePath();
         const active = activePath ? manager.findByPath(activePath) : undefined;

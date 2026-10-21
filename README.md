@@ -157,6 +157,12 @@ VS Code offers no way to filter the terminal tab list by project, so Project Hub
 
 - **Project grid** (`projectHub.projectTerminalGrid`, on by default): on every switch, the active project's agent terminals fill the editor area in a 2-column grid (one terminal per cell, up to 6). Other projects' terminals go back to the closed panel with sessions intact. Opening another agent for the active project rebuilds the grid. Open files stay as background tabs in the first cell.
 - **⫽ button**: arrange on demand. *All projects* gives each project one cell with its terminals as tabs; *active project only* gives each terminal its own cell. With the project grid on, the next switch or new agent returns to the active-project grid.
+- **Choose projects**: the ⫽ button also offers *Choose projects…* — check two or more projects and only their agents share one grid (one cell per agent up to 6, otherwise one cell per project with its agents as tabs). Projects with no agent running get the default agent started (unless `projectHub.autoStartClaudeOnSwitch` is off). The last selection is pre-checked next time. While this grid is up, opening an agent does not snap back to the active-project grid; switching to a project does.
+- **Project groups**: save a combination you use often. **⋯ → New Project Group…** picks the projects and a name; the group appears at the top of the list, and clicking it shows that grid. Edit (✎) and delete (🗑) are on the row. Groups are saved per machine in `~/.project-hub/projects.json`; deleting a group does not touch its projects or agents.
+- **Constraints of the multi-project grid**:
+  - One window connects to one machine, so a grid can only hold projects of that machine — local and SSH-server projects cannot share a grid.
+  - Up to 6 cells; beyond that, extra terminals go into the last cell as tabs.
+  - It is a view for **you** to watch and type into several agents. Project Hub does not relay messages between agents: agents do not talk to each other — a person types into a terminal and that agent's CLI runs it.
 - With the project grid off: `projectHub.splitAgentTerminals` opens a project's next agent split beside its existing terminal, and `projectHub.terminalsInEditor` opens agent terminals as editor tabs.
 - VS Code auto-locks editor groups that contain only a terminal (`workbench.editor.autoLockGroups`), so files you open go to another group. Project Hub unlocks and closes empty groups before each rearrangement.
 - Right-click any terminal → **Attach This Terminal to a Project** to adopt a terminal you opened yourself.
@@ -176,7 +182,9 @@ Available from the Command Palette (`Ctrl+Shift+P`):
 | Project Hub: Create New Project | Create a folder, register it, switch to it |
 | Project Hub: Add Current Folder as Project | Register the folder currently open |
 | Project Hub: Quick Switch Project | Fuzzy-pick a project (also on the status bar) |
-| Project Hub: Arrange Agent Terminals in Grid | 2-column editor grid |
+| Project Hub: Arrange Agent Terminals in Grid | 2-column editor grid (all / active project / chosen projects / a group) |
+| Project Hub: New Project Group… | Save projects to show together in one grid |
+| Project Hub: Show Project Group in Grid | Show a saved group's agents in one grid |
 | Project Hub: Set Up SSH Key for a Server | Register an SSH key with one password entry (local window) |
 | Project Hub: Attach This Terminal to a Project | Adopt a terminal you opened yourself |
 | Project Hub: Set Up Completion Notifications | (Re)install the global hooks |
@@ -256,6 +264,8 @@ It cannot. Hooks use `curl` with a 3-second timeout and fail silently when the s
 ## Limitations
 
 - Services and Background Processes support Windows (PowerShell) and Linux (`/proc`); macOS is not supported yet. Everything else is cross-platform.
+- No agent-to-agent communication: every agent is an independent CLI that runs what a person types into its terminal. The multi-project grid only puts them side by side.
+- A grid holds only the projects of the machine the window is connected to (no mixing local and SSH projects).
 - Codex `resume --last` cwd filtering requires a 2026+ CLI.
 - Antigravity hook events follow current public docs — please report if notifications don't fire.
 - Usage figures are estimates from list prices, not billing data.
@@ -414,6 +424,12 @@ VS Code는 터미널 탭 목록을 프로젝트별로 거르는 기능을 제공
 
 - **프로젝트 그리드** (`projectHub.projectTerminalGrid`, 기본 켜짐): 전환할 때마다 활성 프로젝트의 에이전트 터미널이 에디터 영역을 2열 그리드로 채웁니다(터미널마다 한 칸, 최대 6칸). 다른 프로젝트 터미널은 세션을 유지한 채 닫힌 패널로 돌아갑니다. 활성 프로젝트에 에이전트를 새로 열면 그리드를 다시 짭니다. 열려 있던 파일은 첫 칸의 뒤쪽 탭으로 남습니다.
 - **⫽ 버튼**: 원할 때 배치합니다. *전체 프로젝트*는 프로젝트마다 한 칸, 그 프로젝트 터미널은 칸 안의 탭으로 합칩니다. *활성 프로젝트만*은 터미널마다 한 칸입니다. 프로젝트 그리드가 켜져 있으면 다음 전환이나 에이전트 추가 시 활성 프로젝트 그리드로 돌아갑니다.
+- **프로젝트 고르기**: ⫽ 버튼의 *프로젝트 고르기…*에서 프로젝트를 두 개 이상 체크하면 그 프로젝트들의 에이전트만 한 그리드에 띄웁니다(에이전트가 6개 이하면 에이전트마다 한 칸, 넘으면 프로젝트마다 한 칸에 탭으로). 에이전트가 없는 프로젝트는 기본 에이전트를 시작합니다(`projectHub.autoStartClaudeOnSwitch`가 꺼져 있으면 건너뜀). 마지막에 고른 조합은 다음에 미리 체크됩니다. 이 그리드가 떠 있는 동안에는 에이전트를 열어도 활성 프로젝트 그리드로 돌아가지 않고, 프로젝트를 전환하면 풀립니다.
+- **프로젝트 그룹**: 자주 쓰는 조합을 저장합니다. **⋯ → 새 프로젝트 그룹…**에서 프로젝트와 이름을 정하면 목록 맨 위에 그룹이 생기고, 누르면 그 그리드를 띄웁니다. 편집(✎)·삭제(🗑)는 그 행에 있습니다. 그룹은 장비마다 `~/.project-hub/projects.json`에 저장되며, 그룹을 삭제해도 프로젝트와 에이전트는 그대로입니다.
+- **여러 프로젝트 그리드의 제약**:
+  - VS Code 창 하나는 장비 한 곳에만 연결되므로 그 장비의 프로젝트만 한 그리드에 넣을 수 있습니다. 로컬 프로젝트와 SSH 서버 프로젝트는 함께 띄울 수 없습니다.
+  - 최대 6칸이며, 넘치는 터미널은 마지막 칸에 탭으로 들어갑니다.
+  - 여러 에이전트를 **사람이** 나란히 보며 입력하기 위한 화면입니다. Project Hub는 에이전트 사이에 메시지를 전달하지 않습니다. 에이전트끼리 대화하지 않으며, 사람이 터미널에 입력하면 그 에이전트의 CLI가 실행합니다.
 - 프로젝트 그리드를 끈 경우: `projectHub.splitAgentTerminals`는 프로젝트의 다음 에이전트를 기존 터미널 옆에 분할해 열고, `projectHub.terminalsInEditor`는 에이전트 터미널을 에디터 탭으로 엽니다.
 - VS Code는 터미널만 든 에디터 그룹을 자동으로 잠그므로(`workbench.editor.autoLockGroups`) 파일은 다른 그룹에 열립니다. Project Hub는 다시 배치하기 전에 잠금을 풀고 빈 그룹을 닫습니다.
 - 아무 터미널이나 우클릭 → **이 터미널을 프로젝트에 연결**로 직접 연 터미널을 편입할 수 있습니다.
@@ -433,7 +449,9 @@ VS Code는 터미널 탭 목록을 프로젝트별로 거르는 기능을 제공
 | Project Hub: 새 프로젝트 만들기 | 폴더를 만들어 등록하고 전환 |
 | Project Hub: 현재 폴더를 프로젝트로 추가 | 지금 열려 있는 폴더를 등록 |
 | Project Hub: 프로젝트 빠른 전환 | 프로젝트 검색 전환 (상태 표시줄에서도 가능) |
-| Project Hub: 에이전트 터미널 그리드 배치 | 에디터 2열 그리드 |
+| Project Hub: 에이전트 터미널 그리드 배치 | 에디터 2열 그리드 (전체 / 활성 프로젝트 / 고른 프로젝트 / 그룹) |
+| Project Hub: 새 프로젝트 그룹… | 한 그리드에 함께 볼 프로젝트 묶음 저장 |
+| Project Hub: 프로젝트 그룹 그리드로 보기 | 저장한 그룹의 에이전트를 한 그리드에 표시 |
 | Project Hub: 서버에 SSH 키 설정 | 비밀번호 1회 입력으로 SSH 키 등록 (로컬 창) |
 | Project Hub: 이 터미널을 프로젝트에 연결 | 직접 연 터미널 편입 |
 | Project Hub: 완료 알림 설정 | 전역 hook 재설치 |
@@ -513,6 +531,8 @@ Python Environments 확장은 터미널에 명령을 입력하는 방식으로 �
 ## 알려진 제약
 
 - 서비스·백그라운드 프로세스는 Windows(PowerShell)와 Linux(`/proc`)를 지원하며 macOS는 아직 미지원입니다. 그 외 기능은 크로스 플랫폼입니다.
+- 에이전트 간 통신은 지원하지 않습니다. 각 에이전트는 사람이 터미널에 입력한 내용을 실행하는 독립된 CLI이며, 여러 프로젝트 그리드는 이들을 나란히 보여 줄 뿐입니다.
+- 한 그리드에는 그 창이 연결된 장비의 프로젝트만 넣을 수 있습니다(로컬과 SSH 프로젝트 혼합 불가).
 - Codex `resume --last`의 cwd 필터는 2026년 이후 CLI가 필요합니다.
 - Antigravity hook 이벤트는 현재 공개 문서 기준입니다. 알림이 오지 않으면 제보해 주세요.
 - 사용량 수치는 정가 기준 추정치이며 실제 청구 데이터가 아닙니다.

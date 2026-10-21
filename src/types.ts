@@ -5,6 +5,12 @@ export interface Project {
     color?: string;
 }
 
+/** 그리드로 함께 띄울 프로젝트 묶음 (같은 장비의 프로젝트만, 경로로 참조) */
+export interface ProjectGroup {
+    name: string;
+    paths: string[];
+}
+
 export type ProjectStatus = 'idle' | 'working' | 'done' | 'attention';
 
 /**

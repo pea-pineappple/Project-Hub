@@ -57,5 +57,9 @@
   "cmd.selectDefaultAgent": "Project Hub: 기본 에이전트 선택",
   "cfg.autoStartAgent": "열린 에이전트 터미널이 없는 프로젝트로 전환할 때 무엇을 시작할지 (projectHub.autoStartClaudeOnSwitch가 켜져 있어야 함).",
   "cfg.autoStartAgent.default": "projectHub.defaultAgent를 자동으로 시작합니다.",
-  "cfg.autoStartAgent.ask": "매번 시작할 에이전트를 묻습니다."
+  "cfg.autoStartAgent.ask": "매번 시작할 에이전트를 묻습니다.",
+  "cmd.createProjectGroup": "새 프로젝트 그룹…",
+  "cmd.openProjectGroup": "프로젝트 그룹 그리드로 보기",
+  "cmd.editProjectGroup": "프로젝트 그룹 편집",
+  "cmd.deleteProjectGroup": "프로젝트 그룹 삭제"
 }
