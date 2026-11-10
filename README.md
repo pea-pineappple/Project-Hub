@@ -9,6 +9,13 @@ Switch projects from a sidebar list without reloading the window — terminals a
 *UI languages: English · 한국어 · 日本語 · 简体中文 · 繁體中文 (follows the VS Code display language).*
 *[한국어 문서는 아래에 있습니다 →](#한국어)*
 
+## What's new in 0.20 – 0.22
+
+- **Project groups & chosen-project grids** — save a combination of projects as a group and open its agents in one grid, or hand-pick exactly which projects share a grid (0.22.0).
+- **Safer remote terminals** — on SSH remotes, the agent terminal *is* the tmux client: nothing can be typed into an agent's prompt by mistake, VS Code's own terminal restore re-attaches by itself, and reconnecting no longer duplicates terminals (0.21.1 – 0.22.0).
+- **Services & background processes on Linux** — SSH remotes included: detection reads `/proc` directly, servers are attributed by working directory, tmux panes are followed, and stopping is a proper SIGTERM → SIGKILL (0.21.0).
+- **Choose the auto-start agent** — pick which agent starts on switch, or be asked every time (0.20.0).
+
 ---
 
 ## The problem this solves
@@ -285,6 +292,13 @@ MIT
 사이드바에서 창 리로드 없이 프로젝트를 전환하고, Claude / Codex / Gemini / Antigravity / OpenCode 세션을 프로젝트별로 격리해 실행합니다. 백그라운드 작업이 끝나면 알림이 오고, **프로젝트로 전환** 버튼 한 번으로 돌아갑니다. 다른 PC와 SSH 서버의 프로젝트도 같은 목록에 보입니다.
 
 *이전 이름은 "Project Hub for Claude Code"입니다. Claude Code 보조 도구로 시작해 여러 프로젝트·여러 에이전트 작업 공간으로 커졌습니다. 이전 버전의 데이터는 자동으로 이어집니다.*
+
+## 0.20 – 0.22의 변화
+
+- **프로젝트 그룹·선택 그리드** — 자주 쓰는 프로젝트 조합을 그룹으로 저장해 한 그리드로 열거나, 어떤 프로젝트끼리 한 그리드에 묶을지 직접 고릅니다 (0.22.0).
+- **안전해진 원격 터미널** — SSH 원격에서 에이전트 터미널이 tmux 클라이언트 그 자체로 실행됩니다. 에이전트 프롬프트에 명령이 잘못 입력될 일이 없고, VS Code 자체 터미널 복원이 알아서 재접속하며, 재연결 때 터미널이 이중으로 뜨지 않습니다 (0.21.1 – 0.22.0).
+- **Linux 서비스·백그라운드 프로세스** — SSH 원격 포함: `/proc` 직접 조회, 작업 디렉터리 기반 귀속, tmux 팬 추적, SIGTERM → SIGKILL 정상 종료 (0.21.0).
+- **자동 시작 에이전트 선택** — 전환 시 띄울 에이전트를 고르거나 매번 물어볼 수 있습니다 (0.20.0).
 
 ## 이 확장이 해결하는 문제
 
