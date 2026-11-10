@@ -4,8 +4,6 @@
 
 Switch projects from a sidebar list without reloading the window — terminals and your Claude / Codex / Gemini / Antigravity / OpenCode sessions keep running in the background, and a notification (with a one-click **Switch to Project** button) tells you when an agent finishes or needs your input. Projects on your other PCs and SSH servers show up in the same list.
 
-*Formerly "Project Hub for Claude Code" — it started as a Claude Code helper and grew into a multi-project, multi-agent workspace. Data from earlier versions carries over automatically.*
-
 *UI languages: English · 한국어 · 日本語 · 简体中文 · 繁體中文 (follows the VS Code display language).*
 *[한국어 문서는 아래에 있습니다 →](#한국어)*
 
@@ -291,7 +289,6 @@ MIT
 
 사이드바에서 창 리로드 없이 프로젝트를 전환하고, Claude / Codex / Gemini / Antigravity / OpenCode 세션을 프로젝트별로 격리해 실행합니다. 백그라운드 작업이 끝나면 알림이 오고, **프로젝트로 전환** 버튼 한 번으로 돌아갑니다. 다른 PC와 SSH 서버의 프로젝트도 같은 목록에 보입니다.
 
-*이전 이름은 "Project Hub for Claude Code"입니다. Claude Code 보조 도구로 시작해 여러 프로젝트·여러 에이전트 작업 공간으로 커졌습니다. 이전 버전의 데이터는 자동으로 이어집니다.*
 
 ## 0.20 – 0.22의 변화
 
