@@ -910,10 +910,15 @@ export function activate(context: vscode.ExtensionContext): void {
     // ── 명령 등록 ───────────────────────────────────────────────
     context.subscriptions.push(
         vscode.commands.registerCommand('projectHub.addProject', async () => {
+            // 원격 창(또는 files.simpleDialog.enable)은 VS Code 간이 선택 창을 쓰는데, 여러 개 선택을 켜면
+            // 항목이 체크박스로 바뀌어 폴더 안으로 들어갈 수 없다 → 그때는 한 번에 하나만
+            const simpleDialog =
+                !!vscode.env.remoteName ||
+                vscode.workspace.getConfiguration('files').get<boolean>('simpleDialog.enable', false);
             const picked = await vscode.window.showOpenDialog({
                 canSelectFolders: true,
                 canSelectFiles: false,
-                canSelectMany: true,
+                canSelectMany: !simpleDialog,
                 openLabel: vscode.l10n.t('Add as Project')
             });
             if (!picked) {

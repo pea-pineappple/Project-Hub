@@ -183,7 +183,7 @@ Available from the Command Palette (`Ctrl+Shift+P`):
 
 | Command | What it does |
 |---|---|
-| Project Hub: Add Project | Register one or more existing folders |
+| Project Hub: Add Project | Register existing folders (several at once locally, one at a time in a remote window) |
 | Project Hub: Create New Project | Create a folder, register it, switch to it |
 | Project Hub: Add Current Folder as Project | Register the folder currently open |
 | Project Hub: Quick Switch Project | Fuzzy-pick a project (also on the status bar) |
@@ -456,7 +456,7 @@ VS Code는 터미널 탭 목록을 프로젝트별로 거르는 기능을 제공
 
 | 명령 | 설명 |
 |---|---|
-| Project Hub: 프로젝트 추가 | 기존 폴더를 하나 이상 등록 |
+| Project Hub: 프로젝트 추가 | 기존 폴더 등록 (로컬은 여러 개 한 번에, 원격 창은 하나씩) |
 | Project Hub: 새 프로젝트 만들기 | 폴더를 만들어 등록하고 전환 |
 | Project Hub: 현재 폴더를 프로젝트로 추가 | 지금 열려 있는 폴더를 등록 |
 | Project Hub: 프로젝트 빠른 전환 | 프로젝트 검색 전환 (상태 표시줄에서도 가능) |
