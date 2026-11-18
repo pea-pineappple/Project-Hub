@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import { AgentSessionStatus, Project, ProjectGroup, ProjectStatus } from './types';
 import { normalizePath, samePath, isWithin } from './paths';
+import { currentHost } from './hostRegistry';
 
 const STORE_KEY = 'projectHub.projects';
 const ANCHOR_LABEL = '⌂ Hub';
@@ -18,9 +19,20 @@ const PROJECTS_FILE = path.join(os.homedir(), '.project-hub', 'projects.json');
  * globalState 백업 키. 원격(SSH 등) 창의 globalState는 로컬 PC 쪽 저장소를 함께 쓰므로,
  * 같은 키를 쓰면 원격 서버에 로컬 Windows 프로젝트 목록이 옮겨 오고(반대로 덮어쓰기도 됨)
  * "Folder does not exist: c:\…" 오류가 난다. 원격이면 호스트별로 키를 나눈다.
+ * SSH는 접속 주소(user@IP)로 나눈다 — 호스트 이름은 바뀌거나 다른 서버와 겹칠 수 있어서,
+ * 서버 이름을 바꾼 뒤 그 이름을 받은 새 서버가 옛 서버의 목록을 복구해 가는 일이 있었다.
  */
 function backupKey(): string {
-    return vscode.env.remoteName ? `${STORE_KEY}@${vscode.env.remoteName}:${os.hostname()}` : STORE_KEY;
+    if (!vscode.env.remoteName) {
+        return STORE_KEY;
+    }
+    const host = currentHost();
+    return host ? `${STORE_KEY}@${host.key}` : legacyBackupKey();
+}
+
+/** 예전 백업 키 (원격 종류 + 호스트 이름) */
+function legacyBackupKey(): string {
+    return `${STORE_KEY}@${vscode.env.remoteName}:${os.hostname()}`;
 }
 
 /** 이 확장이 실행 중인 OS 형식의 절대 경로인지 (Windows 창에 /home/…, 리눅스 원격에 c:\… 가 섞이지 않게) */
@@ -72,11 +84,30 @@ export class ProjectManager {
     constructor(private context: vscode.ExtensionContext) {
         // 구버전(globalState 저장) 마이그레이션: 파일이 없고 globalState에 데이터가 있으면 파일로 이전
         if (!fs.existsSync(PROJECTS_FILE)) {
-            const legacy = this.context.globalState.get<Project[]>(backupKey(), []).filter(p => isNativePath(p.path));
+            const legacy = this.backupProjects();
             if (legacy.length) {
                 this.writeProjectsFile(legacy);
             }
         }
+    }
+
+    /**
+     * globalState 백업의 프로젝트 중 이 장비에 폴더가 실제로 있는 것만.
+     * 백업은 PC 쪽에 있어 다른 장비의 목록이 잘못 걸릴 수 있으므로(예: 호스트 이름이 같은 다른 서버)
+     * 폴더가 없는 항목은 이 장비의 프로젝트로 받아들이지 않는다.
+     */
+    private backupProjects(): Project[] {
+        const state = this.context.globalState;
+        const keys = backupKey() === legacyBackupKey() || !vscode.env.remoteName ? [backupKey()] : [backupKey(), legacyBackupKey()];
+        for (const key of keys) {
+            const found = state
+                .get<Project[]>(key, [])
+                .filter(p => p && p.path && isNativePath(p.path) && fs.existsSync(p.path));
+            if (found.length) {
+                return found;
+            }
+        }
+        return [];
     }
 
     getProjects(): Project[] {
@@ -90,7 +121,7 @@ export class ProjectManager {
         } catch {
             // 파일 손상 시 globalState 폴백
         }
-        return this.context.globalState.get<Project[]>(backupKey(), []).filter(p => isNativePath(p.path));
+        return this.backupProjects();
     }
 
     private readProjectsFile(): { projects?: unknown; groups?: unknown } | undefined {
