@@ -1,6 +1,5 @@
 src/**
 scripts/**
-docs/**
 .claude/**
 .vscode/**
 media/gen-icon.js
@@ -10,3 +9,5 @@ tsconfig.json
 out/**/*.map
 .scope/**
 AGENTS.md
+media/readme/**
+README.*.md

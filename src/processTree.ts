@@ -428,6 +428,41 @@ export async function hasRunningChild(shellPid: number): Promise<boolean | undef
     );
 }
 
+/**
+ * rootPids(터미널 셸 PID) 중 pid를 자손으로 가진 것. 없으면 undefined.
+ * 터미널이 tmux 클라이언트면(원격 유지 모드) 그 세션의 패널 셸 아래까지 따라간다.
+ */
+export async function findOwningRoot(pid: number, rootPids: number[]): Promise<number | undefined> {
+    const snap = await snapshot();
+    const byPid = new Map(snap.procs.map(p => [p.ProcessId, p]));
+    const byParent = new Map<number, number[]>();
+    for (const p of snap.procs) {
+        byParent.set(p.ParentProcessId, [...(byParent.get(p.ParentProcessId) ?? []), p.ProcessId]);
+    }
+    const tmuxSessionPanes = (proc: RawProc | undefined): number[] | undefined => {
+        const target = proc && (proc.Name ?? '').startsWith('tmux') ? tmuxAttachTarget(proc.CommandLine ?? '') : undefined;
+        return target ? snap.tmuxPanes?.get(target) ?? [] : undefined;
+    };
+    for (const root of rootPids) {
+        const seen = new Set<number>([root]);
+        const queue = [root];
+        while (queue.length) {
+            const cur = queue.shift()!;
+            if (cur === pid) {
+                return root;
+            }
+            const next = tmuxSessionPanes(byPid.get(cur)) ?? byParent.get(cur) ?? [];
+            for (const n of next) {
+                if (!seen.has(n)) {
+                    seen.add(n);
+                    queue.push(n);
+                }
+            }
+        }
+    }
+    return undefined;
+}
+
 /** 프로세스 시작 시각(ms). 조회 실패 시 undefined */
 export async function processStartTime(pid: number): Promise<number | undefined> {
     const snap = await snapshot();

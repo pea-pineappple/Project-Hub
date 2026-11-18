@@ -2,7 +2,7 @@
   "name": "projecthub",
   "displayName": "Project Hub — Multi-Project & Agent Workspace",
   "description": "%ext.description%",
-  "version": "0.22.3",
+  "version": "0.22.4",
   "l10n": "./l10n",
   "publisher": "PecuniaEstAI",
   "private": true,
@@ -79,170 +79,205 @@
       {
         "command": "projectHub.addProject",
         "title": "%cmd.addProject%",
+        "category": "Project Hub",
         "icon": "$(add)"
       },
       {
         "command": "projectHub.addCurrentFolder",
-        "title": "%cmd.addCurrentFolder%"
+        "title": "%cmd.addCurrentFolder%",
+        "category": "Project Hub"
       },
       {
         "command": "projectHub.createProject",
         "title": "%cmd.createProject%",
+        "category": "Project Hub",
         "icon": "$(new-folder)"
       },
       {
         "command": "projectHub.switchProject",
-        "title": "%cmd.switchProject%"
+        "title": "%cmd.switchProject%",
+        "category": "Project Hub"
       },
       {
         "command": "projectHub.quickSwitch",
-        "title": "%cmd.quickSwitch%"
+        "title": "%cmd.quickSwitch%",
+        "category": "Project Hub"
       },
       {
         "command": "projectHub.removeProject",
         "title": "%cmd.removeProject%",
+        "category": "Project Hub",
         "icon": "$(trash)"
       },
       {
         "command": "projectHub.forgetHost",
         "title": "%cmd.forgetHost%",
+        "category": "Project Hub",
         "icon": "$(close)"
       },
       {
         "command": "projectHub.setupSshKey",
         "title": "%cmd.setupSshKey%",
+        "category": "Project Hub",
         "icon": "$(key)"
       },
       {
         "command": "projectHub.openClaudeTerminal",
         "title": "%cmd.openTerminal%",
+        "category": "Project Hub",
         "icon": "$(terminal)"
       },
       {
         "command": "projectHub.resumeClaudeTerminal",
         "title": "%cmd.resumeTerminal%",
+        "category": "Project Hub",
         "icon": "$(history)"
       },
       {
         "command": "projectHub.pickSession",
         "title": "%cmd.pickSession%",
+        "category": "Project Hub",
         "icon": "$(list-unordered)"
       },
       {
         "command": "projectHub.openAgentTerminal",
         "title": "%cmd.openAgentTerminal%",
+        "category": "Project Hub",
         "icon": "$(robot)"
       },
       {
         "command": "projectHub.selectDefaultAgent",
         "title": "%cmd.selectDefaultAgent%",
+        "category": "Project Hub",
         "icon": "$(settings-gear)"
       },
       {
         "command": "projectHub.setupNotifications",
         "title": "%cmd.setupNotifications%",
+        "category": "Project Hub",
         "icon": "$(bell)"
       },
       {
         "command": "projectHub.setProjectColor",
         "title": "%cmd.setProjectColor%",
+        "category": "Project Hub",
         "icon": "$(symbol-color)"
       },
       {
         "command": "projectHub.killProcess",
         "title": "%cmd.killProcess%",
+        "category": "Project Hub",
         "icon": "$(stop-circle)"
       },
       {
         "command": "projectHub.toggleProcessFilter",
         "title": "%cmd.toggleProcessFilter%",
+        "category": "Project Hub",
         "icon": "$(filter)"
       },
       {
         "command": "projectHub.killService",
         "title": "%cmd.killService%",
+        "category": "Project Hub",
         "icon": "$(stop-circle)"
       },
       {
         "command": "projectHub.restartService",
         "title": "%cmd.restartService%",
+        "category": "Project Hub",
         "icon": "$(debug-restart)"
       },
       {
         "command": "projectHub.killProjectServices",
         "title": "%cmd.killProjectServices%",
+        "category": "Project Hub",
         "icon": "$(stop-circle)"
       },
       {
         "command": "projectHub.sendInstruction",
         "title": "%cmd.sendInstruction%",
+        "category": "Project Hub",
         "icon": "$(comment)"
       },
       {
         "command": "projectHub.arrangeTerminalGrid",
         "title": "%cmd.arrangeGrid%",
+        "category": "Project Hub",
         "icon": "$(split-horizontal)"
       },
       {
         "command": "projectHub.createProjectGroup",
         "title": "%cmd.createProjectGroup%",
+        "category": "Project Hub",
         "icon": "$(new-folder)"
       },
       {
         "command": "projectHub.openProjectGroup",
         "title": "%cmd.openProjectGroup%",
+        "category": "Project Hub",
         "icon": "$(layout)"
       },
       {
         "command": "projectHub.editProjectGroup",
         "title": "%cmd.editProjectGroup%",
+        "category": "Project Hub",
         "icon": "$(edit)"
       },
       {
         "command": "projectHub.deleteProjectGroup",
         "title": "%cmd.deleteProjectGroup%",
+        "category": "Project Hub",
         "icon": "$(trash)"
       },
       {
         "command": "projectHub.adoptTerminal",
         "title": "%cmd.adoptTerminal%",
+        "category": "Project Hub",
         "icon": "$(plug)"
       },
       {
         "command": "projectHub.openBriefing",
         "title": "%cmd.openBriefing%",
+        "category": "Project Hub",
         "icon": "$(arrow-right)"
       },
       {
         "command": "projectHub.clearBriefing",
         "title": "%cmd.clearBriefing%",
+        "category": "Project Hub",
         "icon": "$(clear-all)"
       },
       {
         "command": "projectHub.revealServiceTerminal",
-        "title": "%cmd.revealServiceTerminal%"
+        "title": "%cmd.revealServiceTerminal%",
+        "category": "Project Hub"
       },
       {
         "command": "projectHub.openServiceInBrowser",
         "title": "%cmd.openInBrowser%",
+        "category": "Project Hub",
         "icon": "$(globe)"
       },
       {
         "command": "projectHub.revealFileNodeInOS",
-        "title": "%cmd.revealInOS%"
+        "title": "%cmd.revealInOS%",
+        "category": "Project Hub"
       },
       {
         "command": "projectHub.downloadFileNode",
         "title": "%cmd.downloadFileNode%",
+        "category": "Project Hub",
         "icon": "$(cloud-download)"
       },
       {
         "command": "projectHub.copyFilePath",
-        "title": "%cmd.copyFilePath%"
+        "title": "%cmd.copyFilePath%",
+        "category": "Project Hub"
       },
       {
         "command": "projectHub.refresh",
         "title": "%cmd.refresh%",
+        "category": "Project Hub",
         "icon": "$(refresh)"
       }
     ],

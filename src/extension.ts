@@ -29,7 +29,7 @@ import {
 import { listClaudeSessions, hasClaudeSession, claudeSessionPreview } from './claudeSessions';
 import { initSessionLabels, sessionLabel, sessionTag, setSessionLabel, sanitizeLabel } from './sessionLabels';
 import { getServiceCommand, setServiceCommand } from './serviceCommands';
-import { hasRunningChild, invalidateProcessCache, processName, processStartTime, killProcessTree, serviceUrl, webPorts } from './processTree';
+import { findOwningRoot, hasRunningChild, invalidateProcessCache, processName, processStartTime, killProcessTree, serviceUrl, webPorts } from './processTree';
 import { ServiceNode, ServiceProjectNode, ServicesTreeProvider } from './servicesTree';
 import { BriefingEntry, BriefingStore } from './briefing';
 import { BriefingViewProvider } from './briefingView';
@@ -1839,7 +1839,17 @@ export function activate(context: vscode.ExtensionContext): void {
                 return;
             }
             await switchBeforeRowAction(node.project);
-            const t = terminals.findForProject(node.project);
+            // 그 서비스가 실제로 돌고 있는 터미널을 연다. 프로젝트의 아무 터미널(findForProject)을 열면
+            // 에이전트 터미널이 우선이라 서비스 출력이 있는 터미널에 닿지 못했다.
+            // 1) Restart Service가 만든 터미널(이름 규칙) 2) 서비스 프로세스를 자손으로 가진 터미널
+            const live = vscode.window.terminals.filter(x => x.exitStatus === undefined);
+            let t = live.find(x => node.proc.ports.some(port => x.name === `service · ${node.project.name} · :${port}`));
+            if (!t) {
+                const withPid = await Promise.all(live.map(async x => ({ term: x, pid: await x.processId })));
+                const roots = withPid.filter(x => x.pid !== undefined).map(x => x.pid!);
+                const owner = await findOwningRoot(node.proc.pid, roots);
+                t = withPid.find(x => owner !== undefined && x.pid === owner)?.term;
+            }
             if (t) {
                 t.show(true);
             } else {
