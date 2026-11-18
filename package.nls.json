@@ -61,5 +61,6 @@
   "cmd.createProjectGroup": "New Project Group…",
   "cmd.openProjectGroup": "Show Project Group in Grid",
   "cmd.editProjectGroup": "Edit Project Group",
-  "cmd.deleteProjectGroup": "Delete Project Group"
+  "cmd.deleteProjectGroup": "Delete Project Group",
+  "cmd.downloadFileNode": "Download to This PC…"
 }

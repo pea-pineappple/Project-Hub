@@ -2,7 +2,7 @@
   "name": "projecthub",
   "displayName": "Project Hub — Multi-Project & Agent Workspace",
   "description": "%ext.description%",
-  "version": "0.22.1",
+  "version": "0.22.2",
   "l10n": "./l10n",
   "publisher": "PecuniaEstAI",
   "private": true,
@@ -232,6 +232,11 @@
         "title": "%cmd.revealInOS%"
       },
       {
+        "command": "projectHub.downloadFileNode",
+        "title": "%cmd.downloadFileNode%",
+        "icon": "$(cloud-download)"
+      },
+      {
         "command": "projectHub.copyFilePath",
         "title": "%cmd.copyFilePath%"
       },
@@ -411,6 +416,11 @@
           "group": "1_actions@1"
         },
         {
+          "command": "projectHub.downloadFileNode",
+          "when": "view == projectHub.projects && (viewItem == fileRow || viewItem == dirRow) && remoteName",
+          "group": "1_actions@0"
+        },
+        {
           "command": "projectHub.copyFilePath",
           "when": "view == projectHub.projects && (viewItem == fileRow || viewItem == dirRow)",
           "group": "1_actions@2"
@@ -503,6 +513,10 @@
         },
         {
           "command": "projectHub.copyFilePath",
+          "when": "false"
+        },
+        {
+          "command": "projectHub.downloadFileNode",
           "when": "false"
         }
       ]

@@ -61,5 +61,6 @@
   "cmd.createProjectGroup": "新增專案群組…",
   "cmd.openProjectGroup": "以格狀顯示專案群組",
   "cmd.editProjectGroup": "編輯專案群組",
-  "cmd.deleteProjectGroup": "刪除專案群組"
+  "cmd.deleteProjectGroup": "刪除專案群組",
+  "cmd.downloadFileNode": "下載到這台電腦…"
 }

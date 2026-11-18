@@ -61,5 +61,6 @@
   "cmd.createProjectGroup": "新建项目组…",
   "cmd.openProjectGroup": "以网格显示项目组",
   "cmd.editProjectGroup": "编辑项目组",
-  "cmd.deleteProjectGroup": "删除项目组"
+  "cmd.deleteProjectGroup": "删除项目组",
+  "cmd.downloadFileNode": "下载到此电脑…"
 }

@@ -164,5 +164,6 @@
   "Select a project group": "選擇專案群組",
   "Group name": "群組名稱",
   "Enter a name.": "請輸入名稱。",
-  "A group with this name already exists.": "已有同名的群組。"
+  "A group with this name already exists.": "已有同名的群組。",
+  "Could not download {0}. Use right-click → Download... in the Explorer instead.": "無法下載 {0}。請在檔案總管中按右鍵 → Download...。"
 }

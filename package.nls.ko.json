@@ -61,5 +61,6 @@
   "cmd.createProjectGroup": "새 프로젝트 그룹…",
   "cmd.openProjectGroup": "프로젝트 그룹 그리드로 보기",
   "cmd.editProjectGroup": "프로젝트 그룹 편집",
-  "cmd.deleteProjectGroup": "프로젝트 그룹 삭제"
+  "cmd.deleteProjectGroup": "프로젝트 그룹 삭제",
+  "cmd.downloadFileNode": "이 PC로 다운로드…"
 }

@@ -61,5 +61,6 @@
   "cmd.createProjectGroup": "新しいプロジェクトグループ…",
   "cmd.openProjectGroup": "プロジェクトグループをグリッドで表示",
   "cmd.editProjectGroup": "プロジェクトグループを編集",
-  "cmd.deleteProjectGroup": "プロジェクトグループを削除"
+  "cmd.deleteProjectGroup": "プロジェクトグループを削除",
+  "cmd.downloadFileNode": "このPCにダウンロード…"
 }

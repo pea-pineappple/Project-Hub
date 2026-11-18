@@ -164,5 +164,6 @@
   "Select a project group": "プロジェクトグループを選択",
   "Group name": "グループ名",
   "Enter a name.": "名前を入力してください。",
-  "A group with this name already exists.": "同じ名前のグループが既にあります。"
+  "A group with this name already exists.": "同じ名前のグループが既にあります。",
+  "Could not download {0}. Use right-click → Download... in the Explorer instead.": "{0} をダウンロードできませんでした。エクスプローラーで右クリック → Download... を使ってください。"
 }

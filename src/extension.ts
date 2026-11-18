@@ -1227,6 +1227,31 @@ export function activate(context: vscode.ExtensionContext): void {
             }
         }),
 
+        vscode.commands.registerCommand('projectHub.downloadFileNode', async (node?: HubNode) => {
+            // 원격 창 전용: 서버의 파일·폴더를 이 PC에 저장. VS Code 탐색기의 Download... 기능을 빌려 쓴다
+            // (PC 쪽 저장 창, 큰 파일·폴더, 진행률 표시를 VS Code가 처리). 그 기능은 탐색기에서
+            // 선택된 항목을 대상으로 하므로, 탐색기에서 이 파일을 선택한 뒤 실행한다.
+            const target = fileNodePath(node);
+            if (!target || !node || !('project' in node) || !node.project) {
+                return;
+            }
+            // 탐색기에는 활성 프로젝트(워크스페이스 폴더)만 있으므로 다른 프로젝트 파일이면 먼저 전환
+            if (!manager.isActive(node.project)) {
+                await switchTo(node.project, false);
+            }
+            try {
+                await vscode.commands.executeCommand('revealInExplorer', vscode.Uri.file(target));
+                await vscode.commands.executeCommand('explorer.download');
+            } catch {
+                vscode.window.showWarningMessage(
+                    vscode.l10n.t('Could not download {0}. Use right-click → Download... in the Explorer instead.', path.basename(target))
+                );
+            } finally {
+                // 다운로드는 백그라운드로 진행되므로 사이드바를 Project Hub로 되돌린다
+                void vscode.commands.executeCommand('workbench.view.extension.projectHub');
+            }
+        }),
+
         vscode.commands.registerCommand('projectHub.copyFilePath', async (node?: HubNode) => {
             const target = fileNodePath(node);
             if (target) {

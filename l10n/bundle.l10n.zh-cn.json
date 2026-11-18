@@ -164,5 +164,6 @@
   "Select a project group": "选择项目组",
   "Group name": "组名",
   "Enter a name.": "请输入名称。",
-  "A group with this name already exists.": "已存在同名的组。"
+  "A group with this name already exists.": "已存在同名的组。",
+  "Could not download {0}. Use right-click → Download... in the Explorer instead.": "无法下载 {0}。请在资源管理器中右键 → Download...。"
 }

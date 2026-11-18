@@ -153,6 +153,7 @@ Each project row has a **Files** node — a file tree of that project, right in 
 - Rows carry the real file URI, so you get your **file icon theme** and **Git status colours** exactly as in the Explorer.
 - Clicking a file opens it in a preview tab. With `projectHub.switchOnRowClick` on (the default) it switches to that project first; turn it off to peek into another project without moving the Explorer.
 - Right-click a file or folder for **Reveal in File Explorer** and **Copy Path**.
+- In a remote (SSH) window, right-click → **Download to This PC…** saves a file or folder to your local machine — for PDFs, slides, images and anything else you'd rather open with a local app. It uses VS Code's own Explorer download (local save dialog, progress, folders), so the sidebar briefly shows the Explorer; a file of another project switches to that project first.
 - `projectHub.fileTreeExclude` hides names you don't want listed (`.git`, `node_modules`, … by default). Matching is on the exact name, not a glob.
 - The tree is read on expand — use **Project Hub: Refresh**, or collapse and expand, to pick up files created outside VS Code.
 
@@ -426,6 +427,7 @@ Remote-SSH에서는 확장이 원격 서버에서 실행되므로 에이전트 �
 - 각 행에 실제 파일 URI가 붙어 있어 **파일 아이콘 테마**와 **Git 상태 색상**이 Explorer와 똑같이 적용됩니다.
 - 파일을 클릭하면 미리보기 탭으로 열립니다. `projectHub.switchOnRowClick`이 켜져 있으면(기본) 그 프로젝트로 전환한 뒤 열고, 끄면 Explorer를 그대로 둔 채 파일만 엽니다.
 - 파일·폴더 우클릭 → **탐색기에서 보기**, **경로 복사**
+- 원격(SSH) 창에서는 우클릭 → **이 PC로 다운로드…**로 파일·폴더를 내 PC에 저장합니다. PDF, pptx, 이미지처럼 PC의 프로그램으로 열고 싶은 파일에 씁니다. VS Code 탐색기의 다운로드 기능(PC 쪽 저장 창, 진행률, 폴더 지원)을 그대로 쓰기 때문에 사이드바가 잠깐 탐색기로 바뀌며, 다른 프로젝트의 파일이면 먼저 그 프로젝트로 전환합니다.
 - `projectHub.fileTreeExclude`로 보이지 않게 할 이름을 지정합니다 (기본: `.git`, `node_modules` 등). glob이 아니라 이름 그대로 비교합니다.
 - 트리는 펼칠 때 읽으므로, VS Code 밖에서 만든 파일은 **Project Hub: 새로 고침**을 누르거나 접었다 펴면 반영됩니다.
 

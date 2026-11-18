@@ -164,5 +164,6 @@
   "Select a project group": "프로젝트 그룹 선택",
   "Group name": "그룹 이름",
   "Enter a name.": "이름을 입력하세요.",
-  "A group with this name already exists.": "같은 이름의 그룹이 이미 있습니다."
+  "A group with this name already exists.": "같은 이름의 그룹이 이미 있습니다.",
+  "Could not download {0}. Use right-click → Download... in the Explorer instead.": "{0}을(를) 다운로드하지 못했습니다. 탐색기에서 우클릭 → Download...를 사용하세요."
 }
